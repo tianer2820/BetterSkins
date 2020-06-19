@@ -1,0 +1,11 @@
+{
+  "skins":[
+    [
+        {"text": "HeadFront", "size": [1,2,3,4]},
+        {"text": "HeadBack", "size": [20,20,20,10]}
+      ],
+      [
+        {"text": "alex", "size": [0, 0, 5, 5]}
+      ]
+    ]
+}

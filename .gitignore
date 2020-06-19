@@ -1,3 +1,6 @@
+.vscode/
+build/
+wxWidgets/
 
 # Created by https://www.toptal.com/developers/gitignore/api/c++,visualstudiocode,cmake,visualstudio
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++,visualstudiocode,cmake,visualstudio

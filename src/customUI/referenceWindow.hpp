@@ -144,14 +144,16 @@ protected:
     {
         event.Skip();
         wxAutoBufferedPaintDC dc(this);
+        dc.Clear();
         if (!img.IsOk())
         {
-            dc.Clear();
             return;
         }
         // if the image is good to draw:
         wxImage screen = wxImage(this->GetClientSize());
+        screen.InitAlpha();
         u_char *data = screen.GetData();
+        u_char *alpha = screen.GetAlpha();
         int w = screen.GetWidth();
         int h = screen.GetHeight();
 
@@ -162,30 +164,46 @@ protected:
         wxColour bg_color = this->GetBackgroundColour();
         int c[3] = {bg_color.Red(), bg_color.Green(), bg_color.Blue()};
 
-        for (int y = 0; y < h; y++)
+        if (scale > 1) // scale up, raw pixels are shown
         {
-            for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
             {
-                int img_x, img_y;
-                screenToImage(x, y, img_x, img_y);
-                int index = (y * w + x) * 3;
+                for (int x = 0; x < w; x++)
+                {
+                    int img_x, img_y;
+                    screenToImage(x, y, img_x, img_y);
+                    int index = (y * w + x);
 
-                if (img_x < 0 || img_y < 0 || img_x >= img_w || img_y >= img_h)
-                {
-                    for (int i = 0; i < 3; i++) // fill bg color
+                    if (img_x < 0 || img_y < 0 || img_x >= img_w || img_y >= img_h)
                     {
-                        data[index + i] = c[i];
+                        // set alpha transparent
+                        alpha[index] = 0;
                     }
-                }
-                else
-                {
-                    int img_i = (img_y * img_w + img_x) * 3;
-                    for (int i = 0; i < 3; i++) // fill pixel
+                    else
                     {
-                        data[index + i] = img_data[img_i + i];
+                        int img_i = (img_y * img_w + img_x);
+                        for (int i = 0; i < 3; i++) // fill pixel
+                        {
+                            data[index * 3 + i] = img_data[img_i * 3 + i];
+                        }
+                        alpha[index] = img.GetAlpha(img_x, img_y);
                     }
                 }
             }
+        }
+        else
+        { // scale down, use anti-aliasing
+            // fill bg color
+            for (int i = 0; i < w * h; i++)
+            {
+                for (int channel = 0; channel < 3; channel++)
+                {
+                    data[i*3 + channel] = c[channel];
+                }
+            }
+            
+            wxImage scaled = img.Scale(img_w * scale, img_h * scale, wxIMAGE_QUALITY_BILINEAR);
+            screen.Paste(scaled, x_offset, y_offset);
         }
 
         dc.DrawBitmap(wxBitmap(screen), 0, 0);

@@ -112,8 +112,8 @@ public:
 
                             TextBlock t_block;
                             t_block.name = block_label;
-                            t_block.top = block_size.at(0);
-                            t_block.left = block_size.at(1);
+                            t_block.left = block_size.at(0);
+                            t_block.top = block_size.at(1);
                             t_block.width = block_size.at(2);
                             t_block.height = block_size.at(3);
                             skin.push_back(t_block);

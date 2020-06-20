@@ -24,3 +24,6 @@
 ## Modifier
 - better modifier viewer
 - The layer overlay modifier
+
+## Others
+There are a lot of coupling currently in the code. I will do decoupling after the first release come out.

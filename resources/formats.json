@@ -1,11 +1,32 @@
 {
   "skins":[
+
     [
-        {"text": "HeadFront", "size": [1,2,3,4]},
-        {"text": "HeadBack", "size": [20,20,20,10]}
+        {"text": "HeadTop", "size": [8,0,8,8]},
+        {"text": "HeadRight", "size": [0,8,8,8]},
+        {"text": "HeadFace", "size": [8,8,8,8]},
+        {"text": "HeadRight", "size": [16,8,8,8]},
+        {"text": "HeadBack", "size": [24,8,8,8]},
+        {"text": "HeadBottom", "size": [16,0,8,8]}
+
+
       ],
+
+
       [
         {"text": "alex", "size": [0, 0, 5, 5]}
+      ],
+
+      [
+
+
+      ],
+
+      [
+
+
       ]
+
+
     ]
 }

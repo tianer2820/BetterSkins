@@ -13,6 +13,8 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+#include "imageOperations.hpp"
+
 #include "customUI/colorPickers/advColorPicker.hpp"
 #include "customUI/skinBrowser.h"
 #include "customUI/layerModifierUIs/colorRampCtrl.hpp"
@@ -299,7 +301,7 @@ protected:
         // fill alpha background
         wxImage img(GetSize());
         img.InitAlpha();
-        Color::drawAlpha(img);
+        drawAlpha(img);
 
         wxAutoBufferedPaintDC dc(this);
         dc.DrawBitmap(wxBitmap(img), 0, 0);

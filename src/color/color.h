@@ -37,10 +37,8 @@ public:
     static void HEX2RGB(string hex, int *out);
     static int RGB2GRAY(int* rgb);
 
-    static void drawAlpha(wxImage& img);
-
     static void alphaOver(int *rgba0, int *rgba1, int *out);
-    static void clearAlpha(wxImage& img);
+    
 protected:
     u_char a;
 };

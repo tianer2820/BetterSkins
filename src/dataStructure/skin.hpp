@@ -6,6 +6,8 @@
 
 #include "layer.hpp"
 
+#include "../imageOperations.hpp"
+
 using namespace std;
 
 
@@ -94,7 +96,7 @@ public:
         // render the skin into a image. use this for display
         wxImage render(getLayerSize());
         render.InitAlpha();
-        Color::clearAlpha(render);
+        clearAlpha(render);
         for (auto i = layers.begin(); i != layers.end(); i++)
         {
             Layer *layer = *i;

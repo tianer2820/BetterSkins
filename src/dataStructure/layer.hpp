@@ -4,9 +4,12 @@
 #include <string>
 #include <list>
 #include <set>
+
 #include "layerModifier.hpp"
 #include "command.hpp"
 #include "commandManager.hpp"
+
+#include "../imageOperations.hpp"
 
 using namespace std;
 
@@ -36,11 +39,11 @@ public:
         setName(name);
         paint_img = wxImage(size);
         paint_img.InitAlpha();
-        Color::clearAlpha(paint_img);
+        clearAlpha(paint_img);
 
         stroke_img = wxImage(size);
         stroke_img.InitAlpha();
-        Color::clearAlpha(stroke_img);
+        clearAlpha(stroke_img);
     }
     Layer(const Layer &copy)
     {
@@ -104,7 +107,7 @@ public:
     void clearPaint()
     {
         stroke_img.Clear();
-        Color::clearAlpha(stroke_img);
+        clearAlpha(stroke_img);
         stroke_set.clear();
     }
     /**

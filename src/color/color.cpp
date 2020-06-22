@@ -165,53 +165,11 @@ void Color::alphaOver(int *rgba0, int *rgba1, int *out)
     out[2] = bp;
     out[3] = ap;
 }
-void Color::clearAlpha(wxImage &img)
-{
-    int w = img.GetWidth();
-    int h = img.GetHeight();
-    u_char *alpha = img.GetAlpha();
-    int data_length = w * h;
-    for (int i = 0; i < data_length; i++)
-    {
-        alpha[i] = 0;
-    }
-}
 wxColor Color::toWxColor()
 {
     int rgb[3];
     getRGB(rgb);
     return wxColor(rgb[0], rgb[1], rgb[2], a);
-}
-void Color::drawAlpha(wxImage &img)
-{
-    int w = img.GetWidth();
-    int h = img.GetHeight();
-    u_char *data = img.GetData();
-    u_char *alpha = img.GetAlpha();
-    for (int y = 0; y < h; y++)
-    {
-        for (int x = 0; x < w; x++)
-        {
-            int i = y * w + x;
-            alpha[i] = 255;
-            if ((x / 10 + y / 10) % 2 == 0)
-            {
-                // black block
-                for (int c = 0; c < 3; c++)
-                {
-                    data[i * 3 + c] = 170;
-                }
-            }
-            else
-            {
-                // white block
-                for (int c = 0; c < 3; c++)
-                {
-                    data[i * 3 + c] = 220;
-                }
-            }
-        }
-    }
 }
 
 // RGBColor

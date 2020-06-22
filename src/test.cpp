@@ -590,14 +590,37 @@ wxDEFINE_EVENT(EVT_TOOL_CHANGE, wxCommandEvent);
 class ToolBox : public wxSplitterWindow
 {
 public:
-    static const int tool_count = 10;
+    static const int tool_count = 3;
     ToolBox(wxWindow *parent, wxWindowID id = wxID_ANY) : wxSplitterWindow(parent, id)
     {
         this->SetWindowStyle(wxSP_3DSASH | wxSP_LIVE_UPDATE | wxSP_NO_XP_THEME);
         button_list = new ToolButtonList(this);
         for (int i = 0; i < tool_count; i++)
         {
-            wxBitmapToggleButton *button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(10, 10));
+            wxImage icon;
+            switch (i)
+            {
+            case 0:
+                // pencil
+                icon.LoadFile(_T("./resources/icons/pen.png"));
+                break;
+
+            case 1:
+                // noise
+                icon.LoadFile(_T("./resources/icons/noise.png"));
+                break;
+            
+            case 2:
+                // eraser
+                icon.LoadFile(_T("./resources/icons/eraser.png"));
+                break;
+            
+            default:
+                break;
+            }
+            icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+
+            wxBitmapToggleButton *button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
             button_list->addButton(button);
         }
 

@@ -14,16 +14,17 @@
 - read json when creating new file
 
 ## Layer and image:
-- rename classes, make it like a image editor
 - layer visability
 - drag and drop layer rearrange
 - rename layer in the list box
 - differnet blend mode!
-
+- layer should only handle the modifier render, the blend mode between layers should be done by Skin class
 
 ## Modifier
 - better modifier viewer
 - The layer overlay modifier
+- separate modifier ui and modifier objects, use register/interface to create ui
+- enable/disable modifier
 
 ## Others
 There are a lot of coupling currently in the code. I will do decoupling after the first release come out.

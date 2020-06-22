@@ -5,6 +5,3 @@ add_subdirectory(dataStructure)
 add_executable(Main WIN32 main.cpp)
 target_link_libraries(Main customUI color)
 
-add_executable(Test WIN32 test.cpp)
-target_link_libraries(Test customUI color)
-

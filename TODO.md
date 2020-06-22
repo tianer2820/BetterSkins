@@ -5,7 +5,6 @@
 
 ## canvas:
 - use color inverse for brush square
-- do the skin format json
 
 ## file:
 - save and load functions

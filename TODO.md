@@ -1,6 +1,5 @@
 ## Tools:
 1. selection tools
-2. eraser
 3. tool icon
 4. move tool
 
@@ -28,3 +27,5 @@
 
 ## Others
 There are a lot of coupling currently in the code. I will do decoupling after the first release come out.
+
+split the painting functions out of the color class

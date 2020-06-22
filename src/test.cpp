@@ -780,6 +780,7 @@ public:
 
         item = menu_file->Append(wxID_ANY, _T("Open\tCtrl+O"), _T("open a skin file"));
         item = menu_file->Append(wxID_ANY, _T("Save\tCtrl+S"), _T("save to a skin file"));
+        Bind(wxEVT_MENU, &MyFrame::onSave, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Import"), _T("Import a png file to a layer"));
         Bind(wxEVT_MENU, &MyFrame::onImport, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Export"), _T("export to a png file"));
@@ -849,10 +850,10 @@ protected:
         {
             // some thing is opened
             int ret = wxMessageBox(_T("Save current skin?"), _T("Unsaved skin"), wxYES_NO | wxCANCEL);
-            if (ret == wxOK)
+            if (ret == wxYES)
             {
                 // save
-                wxMessageBox(_T("Sorry! Saving is not support yet.."));
+                wxMessageBox(_T("Sorry! Saving is not supported yet.."));
                 return;
             }
             else if (ret == wxCANCEL)
@@ -898,6 +899,9 @@ protected:
         }
         canvas->loadSkin(myskin);
         viewer->loadSkin(myskin);
+    }
+    void onSave(wxCommandEvent &event){
+        wxMessageBox(_T("Sorry! Saving is not supported yet.."));
     }
     void onExport(wxCommandEvent &event)
     {

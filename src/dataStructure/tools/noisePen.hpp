@@ -19,8 +19,6 @@ public:
         setProperty("SIZE", 1);
         e.seed(wxGetLocalTime());
         tool_type = ToolType::PEN;
-
-        icon = _T("noise.png");
     }
     virtual void moveTo(int x, int y)
     {
@@ -67,6 +65,5 @@ protected:
     default_random_engine e;
     uniform_int_distribution<int> u = uniform_int_distribution<int>(0, 255);
 };
-
 
 #endif // NOISE_PEN_H

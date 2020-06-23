@@ -543,44 +543,6 @@ protected:
  * the string data is used as the option name;
  * the int data is used as the option value;
  */
-wxDECLARE_EVENT(EVT_TOOL_OPTION_CHANGE, wxCommandEvent);
-wxDEFINE_EVENT(EVT_TOOL_OPTION_CHANGE, wxCommandEvent);
-
-class ToolOptionSizeCtrl : public wxPanel
-{
-public:
-    ToolOptionSizeCtrl(wxWindow *parent, wxWindowID id = wxID_ANY) : wxPanel(parent, id)
-    {
-        wxBoxSizer *box = new wxBoxSizer(wxHORIZONTAL);
-        wxStaticText *label = new wxStaticText(this, wxID_ANY, wxString::FromUTF8("Size:"));
-        box->Add(label, 0, wxEXPAND);
-        spin = new wxSpinCtrl(this, wxID_ANY);
-        spin->SetMin(1);
-        spin->SetMax(16);
-        box->Add(spin, 1, wxEXPAND);
-        Bind(wxEVT_SPINCTRL, &ToolOptionSizeCtrl::sendToolOptionChangeEvent, this);
-        SetSizer(box);
-    }
-    void setValue(int value)
-    {
-        spin->SetValue(value);
-    }
-    int getValue()
-    {
-        return spin->GetValue();
-    }
-
-protected:
-    wxSpinCtrl *spin;
-    void sendToolOptionChangeEvent(wxCommandEvent &e)
-    {
-        wxCommandEvent *event = new wxCommandEvent(EVT_TOOL_OPTION_CHANGE, GetId());
-        event->SetEventObject(this);
-        event->SetString("SIZE");
-        event->SetInt(spin->GetValue());
-        wxQueueEvent(GetEventHandler(), event);
-    }
-};
 
 wxDECLARE_EVENT(EVT_TOOL_CHANGE, wxCommandEvent);
 wxDEFINE_EVENT(EVT_TOOL_CHANGE, wxCommandEvent);
@@ -596,45 +558,72 @@ public:
     {
         this->SetWindowStyle(wxSP_3DSASH | wxSP_LIVE_UPDATE | wxSP_NO_XP_THEME);
 
-        // create new tool objects
-        tool_list.push_back(new SolidPen());
-        tool_list.push_back(new NoisePen());
-        tool_list.push_back(new Eraser());
-
+        // create layout widgets
         button_list = new ToolButtonList(this);
-        option_book = new wxSimplebook(this, wxID_ANY);
+        wxSplitterWindow *splitter2 = new wxSplitterWindow(this);
+        splitter2->SetWindowStyle(wxSP_3DSASH | wxSP_LIVE_UPDATE | wxSP_NO_XP_THEME);
+        wxScrolledWindow *common_options = new wxScrolledWindow(splitter2);
+        common_options->SetScrollRate(0, 5);
+        option_book = new wxSimplebook(splitter2, wxID_ANY);
 
-        for (auto i = tool_list.begin(); i != tool_list.end(); i++)
-        {
-            wxImage icon;
-            wxString icon_path = _T("./resources/icons/");
+        // prepare common ctrl panel
+        wxGridSizer *grid = new wxGridSizer(2);
+        wxStaticText *label = new wxStaticText(common_options, wxID_ANY, _T("Size:"));
+        size_ctrl = new wxSpinCtrl(common_options);
+        size_ctrl->SetMin(1);
+        size_ctrl->SetMax(16);
+        Bind(wxEVT_SPINCTRL, &ToolBox::onSizeChange, this, size_ctrl->GetId());
+        grid->Add(label, 1, wxALL, 2);
+        grid->Add(size_ctrl, 0, wxALL, 2);
 
-            icon.LoadFile(icon_path + (*i)->icon);
-                
-            icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        common_options->SetSizer(grid);
 
-            wxBitmapToggleButton *button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
-            button_list->addButton(button);
+        // prepare special ctrl book
+        wxImage icon;
+        wxString icon_path = _T("./resources/icons/");
+        wxScrolledWindow *panel;
+        wxBitmapToggleButton *button;
 
-            // prepare control panel
-            wxScrolledWindow *panel = new wxScrolledWindow(option_book);
-            panel->SetScrollRate(0, 5);
-            ToolOptionSizeCtrl *size_ctrl = new ToolOptionSizeCtrl(panel);
-            wxGridSizer *grid = new wxGridSizer(2);
-            grid->Add(size_ctrl, 0, wxALL, 2);
-            panel->SetSizer(grid);
-            size_ctrls.push_back(size_ctrl);
+        //------------------------------------------------
 
-            // add special ctrls
+        // solid pen
+        tool_list.push_back(new SolidPen());
+        icon.LoadFile(icon_path + _T("pen.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        panel = new wxScrolledWindow(option_book);
+        panel->SetScrollRate(0, 5);
 
-            option_book->AddPage(panel, wxString::FromUTF8("Tool"));
-        }
+        option_book->AddPage(panel, _T("Pen"));
+        button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button_list->addButton(button);
 
-        this->SplitVertically(button_list, option_book, 100);
+        // noise pen
+        tool_list.push_back(new NoisePen());
+        icon.LoadFile(icon_path + _T("noise.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        panel = new wxScrolledWindow(option_book);
+        panel->SetScrollRate(0, 5);
+
+        option_book->AddPage(panel, _T("Noise"));
+        button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button_list->addButton(button);
+
+        // eraser
+        tool_list.push_back(new Eraser());
+        icon.LoadFile(icon_path + _T("eraser.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        panel = new wxScrolledWindow(option_book);
+        panel->SetScrollRate(0, 5);
+
+        option_book->AddPage(panel, _T("Eraser"));
+        button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button_list->addButton(button);
+
+        // do the layout
+        splitter2->SplitVertically(common_options, option_book, 100);
+        this->SplitVertically(button_list, splitter2, 100);
 
         Bind(EVT_BUTTON_LIST_CHANGED, &ToolBox::onButtonChange, this);
-        Bind(EVT_TOOL_OPTION_CHANGE, &ToolBox::onOptionChange, this);
-
     }
     ~ToolBox()
     {
@@ -644,7 +633,7 @@ public:
         }
     }
     /**
-     * Get the active tool. Dont delete the returned object.
+     * Get the active tool. Don't delete the returned object.
      */
     Tool *getTool()
     {
@@ -673,28 +662,32 @@ protected:
     ToolButtonList *button_list;
     vector<Tool *> tool_list;
     wxSimplebook *option_book;
-    vector<ToolOptionSizeCtrl *> size_ctrls;
     bool independent_size = false;
+    // common option ctrls
+    wxSpinCtrl *size_ctrl;
 
-    void onOptionChange(wxCommandEvent &event)
+    void onSizeChange(wxSpinEvent &event)
     {
         // process the options;
-        if (!independent_size && event.GetString() == "SIZE")
+        if (!independent_size)
         {
-            for (auto i = size_ctrls.begin(); i != size_ctrls.end(); i++)
-            {
-                (*i)->setValue(event.GetInt());
-            }
             for (auto i = tool_list.begin(); i != tool_list.end(); i++)
             {
-                (*i)->setProperty("SIZE", event.GetInt());
+                (*i)->setProperty("SIZE", event.GetPosition());
             }
+        }
+        else
+        {
+            getTool()->setProperty("SIZE", event.GetPosition());
         }
     }
     void onButtonChange(wxCommandEvent &event)
     {
         option_book->ChangeSelection(button_list->getSelection());
         sendToolChangeEvent();
+
+        //update common options
+        size_ctrl->SetValue(getTool()->getProperty("SIZE"));
     }
     void sendToolChangeEvent()
     {
@@ -837,7 +830,8 @@ protected:
         {
             Color *color = picker->getColor();
             tool_box->setColor(color);
-            if(picker != color_picker){
+            if (picker != color_picker)
+            {
                 color_picker->setColor(*color);
             }
             delete color;
@@ -900,7 +894,8 @@ protected:
         canvas->loadSkin(myskin);
         viewer->loadSkin(myskin);
     }
-    void onSave(wxCommandEvent &event){
+    void onSave(wxCommandEvent &event)
+    {
         wxMessageBox(_T("Sorry! Saving is not supported yet.."));
     }
     void onExport(wxCommandEvent &event)
@@ -958,10 +953,10 @@ protected:
 
     void onOpenReference(wxCommandEvent &event)
     {
-        wxFileDialog* fd = new wxFileDialog(this, _T("Choose a reference image"),
-                                       wxEmptyString, wxEmptyString,
-                                       _T("All Supported Images|*.bmp;*.jpg;*.png;*.gif;*.tif;*.tiff|All Files|*.*"),
-                                       wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+        wxFileDialog *fd = new wxFileDialog(this, _T("Choose a reference image"),
+                                            wxEmptyString, wxEmptyString,
+                                            _T("All Supported Images|*.bmp;*.jpg;*.png;*.gif;*.tif;*.tiff|All Files|*.*"),
+                                            wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
         int ret = fd->ShowModal();
         if (ret == wxID_OK)

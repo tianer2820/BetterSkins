@@ -4,10 +4,17 @@
 #include "../layer.hpp"
 
 #include "map"
+#include "vector"
 #include "string"
+#include "algorithm"
 
-enum class ToolType{
-    PEN, DROPPER, SELECT, MOVE
+enum class ToolType
+{
+    PEN,
+    DROPPER,
+    SELECT,
+    MOVE,
+    LIGHTEN_DARKEN
 };
 
 /**
@@ -22,21 +29,19 @@ enum class ToolType{
 class Tool
 {
 public:
-    wxString icon = _T("pen.png");
-
     void setLayer(Layer *layer)
     {
         current_layer = layer;
     }
-    virtual void setProperty(string name, int value)
+    void setProperty(string name, int value)
     {
         for (auto i = name.begin(); i != name.end(); i++)
         {
-            *i = toupper(*i);
+            *i = toupper(*i); // convert all letters to upper
         }
         properties[name] = value;
     }
-    virtual int getProperty(string name)
+    int getProperty(string name)
     {
         for (auto i = name.begin(); i != name.end(); i++)
         {
@@ -52,8 +57,9 @@ public:
             return (*iter).second;
         }
     }
-    
-    virtual ToolType getToolType(){
+
+    virtual ToolType getToolType()
+    {
         return tool_type;
     }
 
@@ -62,14 +68,14 @@ public:
     virtual void penUp() = 0;
     virtual void setFunctionalKeys(bool shift, bool ctrl) = 0;
 
-    virtual ~Tool(){}
+    virtual ~Tool() {}
 
 protected:
     Layer *current_layer = NULL;
     bool is_down = false;
     map<string, int> properties;
+    vector<string> property_registry;
     ToolType tool_type = ToolType::PEN;
 };
-
 
 #endif // TOOL_H

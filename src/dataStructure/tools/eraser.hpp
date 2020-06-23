@@ -16,8 +16,6 @@ public:
         setProperty("a", 255);
         setProperty("SIZE", 1);
         tool_type = ToolType::PEN;
-        
-        icon = _T("eraser.png");
     }
     virtual void moveTo(int x, int y)
     {

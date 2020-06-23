@@ -18,7 +18,6 @@
 ## Modifier
 - better modifier viewer
 - The layer overlay modifier
-- separate modifier ui and modifier objects, use register/interface to create ui
 - enable/disable modifier
 
 ## Others

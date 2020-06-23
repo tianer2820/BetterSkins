@@ -1,14 +1,12 @@
 ## Tools:
-1. selection tools
-3. tool icon
-4. move tool
+- selection tools
+- move tool
 
 ## canvas:
 - use color inverse for brush square
 
 ## file:
 - save and load functions
-- export png
 - read json when creating new file
 
 ## Layer and image:
@@ -16,7 +14,6 @@
 - drag and drop layer rearrange
 - rename layer in the list box
 - differnet blend mode!
-- layer should only handle the modifier render, the blend mode between layers should be done by Skin class
 
 ## Modifier
 - better modifier viewer

@@ -100,7 +100,9 @@ public:
         for (auto i = layers.begin(); i != layers.end(); i++)
         {
             Layer *layer = *i;
-            layer->render(render);
+            wxImage layer_render = layer->render();
+            alphaOver(render, layer_render);
+            
         }
         return render;
     }

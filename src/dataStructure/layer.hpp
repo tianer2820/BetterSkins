@@ -29,7 +29,13 @@ bool operator<(const wxPoint& point1, const wxPoint& point2){
     }
 }
 
-
+/**
+ * Each layer is a single "image" that you can paint on or apply modifiers on.
+ * There are several properties:
+ * name: the name of this layer
+ * size: can't be changed, the size of this layer, usually the same as the "skin"
+ * image: the actual data object. Do not use it if possible, use render() to get the layer image, use paint and stroke to paint.
+ */
 class Layer
 {
 public:
@@ -154,17 +160,19 @@ public:
         stroke_set.clear();
     }
     /** 
-     * modifications are done directly on the 'lower' image
+     * return an image without applying modifiers
      */
-    void renderRaw(wxImage &lower)
+    wxImage renderRaw()
     {
-        // this will clear the lower image and fill it with the raw render
+        wxImage ret = wxImage(paint_img.GetSize());
+        ret.InitAlpha();
+
         u_char *stroke_data = stroke_img.GetData();
         u_char *stroke_alpha = stroke_img.GetAlpha();
         u_char *img_data = paint_img.GetData();
         u_char *img_alpha = paint_img.GetAlpha();
-        u_char *canvas_data = lower.GetData();
-        u_char *canvas_alpha = lower.GetAlpha();
+        u_char *canvas_data = ret.GetData();
+        u_char *canvas_alpha = ret.GetAlpha();
         int width = paint_img.GetWidth();
         int height = paint_img.GetHeight();
         // fill canvas with image
@@ -191,33 +199,24 @@ public:
             }
             canvas_alpha[index] = stroke_alpha[index];
         }
+
+        return ret;
     }
     /**
-     * modifications are done on lower
+     * get the final render for this layer, with the modifiers applied
      */
-    void render(wxImage &lower)
+    wxImage render()
     {
-        // render the layer on top of the lower
-        wxImage raw(paint_img.GetSize());
-        raw.InitAlpha();
-        this->renderRaw(raw);
+        // render the raw color
+        wxImage raw = this->renderRaw();
+
         // apply all modifiers
         for (auto i = modifier_list.begin(); i != modifier_list.end(); i++)
         {
             LayerModifier *modifier = *i;
             modifier->render(raw);
         }
-        // alpha over the image
-        int width = paint_img.GetWidth();
-        int height = paint_img.GetHeight();
-        u_char *lower_data = lower.GetData();
-        u_char *lower_alpha = lower.GetAlpha();
-        u_char *raw_data = raw.GetData();
-        u_char *raw_alpha = raw.GetAlpha();
-        for (int i = 0; i < width * height; i++)
-        {
-            alphaOver(lower_data + i * 3, lower_alpha + i, raw_data + i * 3, raw_alpha + i);
-        }
+        return raw;
     }
     /**
      * the returned list is only for reading, editing it will not affact the origional list
@@ -253,21 +252,6 @@ protected:
     set<wxPoint> stroke_set;
     vector<LayerModifier *> modifier_list;
 
-    void alphaOver(u_char *rgb_low, u_char *alpha_low, u_char *rgb_high, u_char *alpha_high)
-    {
-        // this will put the rendered color into the low values. one pixel per call, use array of length 3
-        int rgba0[] = {rgb_low[0], rgb_low[1], rgb_low[2], *alpha_low};
-        int rgba1[] = {rgb_high[0], rgb_high[1], rgb_high[2], *alpha_high};
-        int out[4];
-
-        Color::alphaOver(rgba0, rgba1, out);
-
-        *alpha_low = out[3];
-        for (int i = 0; i < 3; i++)
-        {
-            rgb_low[i] = out[i];
-        }
-    }
 };
 
 #endif // LAYER_HPP

@@ -6,10 +6,14 @@
 #include <wx/wx.h>
 #endif
 
-void clearAlpha(wxImage& img);
-void drawAlpha(wxImage& img);
+#include "color/color.h"
 
+void clearAlpha(wxImage &img);
+void drawAlpha(wxImage &img);
 
+/**
+ * this will draw the checker pattern on the whole image
+ */
 void drawAlpha(wxImage &img)
 {
     int w = img.GetWidth();
@@ -42,6 +46,9 @@ void drawAlpha(wxImage &img)
     }
 }
 
+/**
+ * set all pixels to transparent
+ */
 void clearAlpha(wxImage &img)
 {
     int w = img.GetWidth();
@@ -54,5 +61,33 @@ void clearAlpha(wxImage &img)
     }
 }
 
+/**
+ * lay the "upper" onto the "lower", using alpha blend.
+ * The lower is modified.
+ * If two image don't have the same size, size of "lower" will be used.
+ */
+void alphaOver(wxImage &lower, wxImage &upper)
+{
+    // alpha over the image
+    int width = lower.GetWidth();
+    int height = lower.GetHeight();
+    u_char *lower_data = lower.GetData();
+    u_char *lower_alpha = lower.GetAlpha();
+    u_char *upper_data = upper.GetData();
+    u_char *upper_alpha = upper.GetAlpha();
+    for (int i = 0; i < width * height; i++)
+    {
+        int rgba0[] = {lower_data[i * 3], lower_data[i * 3 + 1], lower_data[i * 3 + 2], lower_alpha[i]};
+        int rgba1[] = {upper_data[i * 3], upper_data[i * 3 + 1], upper_data[i * 3 + 2], upper_alpha[i]};
+        int out[4];
+
+        Color::alphaOver(rgba0, rgba1, out);
+        for (int c = 0; c < 3; c++)
+        {
+            lower_data[i * 3 + c] = out[c];
+        }
+        lower_alpha[i] = out[3];
+    }
+}
 
 #endif // IMAGE_OPERATIONS_H

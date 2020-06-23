@@ -28,12 +28,13 @@ using json = nlohmann::json;
 #include "dataStructure/layer.hpp"
 #include "dataStructure/skin.hpp"
 #include "dataStructure/SkinFormat.hpp"
-#include "dataStructure/tools/Tool.hpp"
 #include "dataStructure/commandManager.hpp"
 
+#include "dataStructure/tools/Tool.hpp"
 #include "dataStructure/tools/solidPen.hpp"
 #include "dataStructure/tools/noisePen.hpp"
 #include "dataStructure/tools/eraser.hpp"
+#include "dataStructure/tools/lightenDarken.hpp"
 
 #include <vector>
 #include <map>
@@ -63,6 +64,7 @@ public:
         SetBackgroundStyle(wxBG_STYLE_PAINT);
         Bind(wxEVT_PAINT, &Canvas::onPaint, this);
         Bind(wxEVT_LEFT_DOWN, &Canvas::onMouse, this);
+        Bind(wxEVT_LEFT_DCLICK, &Canvas::onMouse, this);
         Bind(wxEVT_MOTION, &Canvas::onMouse, this);
         Bind(wxEVT_LEFT_UP, &Canvas::onMouse, this);
         Bind(wxEVT_MIDDLE_DOWN, &Canvas::onMouse, this);
@@ -212,7 +214,7 @@ protected:
         int y = event.GetY();
         if (!is_dragging)
         {
-            if (event.LeftDown())
+            if (event.LeftDown() || event.LeftDClick())
             {
                 // start drawing a stroke
                 if (current_pen != NULL)
@@ -619,6 +621,35 @@ public:
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
         button_list->addButton(button);
 
+        // Lightness brush
+        lighten_darken_tool = new LightenDarkenTool();
+        tool_list.push_back(lighten_darken_tool);
+        icon.LoadFile(icon_path + _T("lighten_darken.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        panel = new wxScrolledWindow(option_book);
+        panel->SetScrollRate(0, 5);
+        grid = new wxGridSizer(2);
+
+        wxSpinCtrl* lightness_spin = new wxSpinCtrl(panel);
+        lightness_spin->SetMin(-255);
+        lightness_spin->SetMax(255);
+        lightness_spin->SetValue(10);
+        label = new wxStaticText(panel, wxID_ANY, _T("Lightness:"));
+        grid->Add(label, 0, 0, 2);
+        grid->Add(lightness_spin, 0, 0, 2);
+        Bind(wxEVT_SPINCTRL, &ToolBox::onLightnessChange, this, lightness_spin->GetId());
+
+        label = new wxStaticText(panel, wxID_ANY, _T("Incremental:"));
+        incremental_box = new wxCheckBox(panel, wxID_ANY, _T("on"));
+        grid->Add(label, 0, 0, 2);
+        grid->Add(incremental_box, 0, 0, 2);
+        Bind(wxEVT_CHECKBOX, &ToolBox::onIncremental, this, incremental_box->GetId());
+
+        panel->SetSizer(grid);
+        option_book->AddPage(panel, _T("Lightness"));
+        button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button_list->addButton(button);
+
         // do the layout
         splitter2->SplitVertically(common_options, option_book, 100);
         this->SplitVertically(button_list, splitter2, 100);
@@ -665,6 +696,20 @@ protected:
     bool independent_size = false;
     // common option ctrls
     wxSpinCtrl *size_ctrl;
+
+    // special ctrls and brushes
+    LightenDarkenTool* lighten_darken_tool;
+    wxCheckBox* incremental_box;
+    void onLightnessChange(wxSpinEvent &event){
+        lighten_darken_tool->setProperty("LIGHTNESS", event.GetPosition());
+    }
+    void onIncremental(wxCommandEvent &event){
+        int is_incremental = 0;
+        if(incremental_box->GetValue()){
+            is_incremental = 1;
+        }
+        lighten_darken_tool->setProperty("INCREMENTAL", is_incremental);
+    }
 
     void onSizeChange(wxSpinEvent &event)
     {

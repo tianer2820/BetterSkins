@@ -13,8 +13,7 @@ enum class ToolType
     PEN,
     DROPPER,
     SELECT,
-    MOVE,
-    LIGHTEN_DARKEN
+    MOVE
 };
 
 /**

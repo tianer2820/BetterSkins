@@ -245,8 +245,15 @@ public:
         modifier_list.insert(modifier_list.begin() + to, modifier);
     }
 
+    void setVisable(bool visable = true){
+        this->visable = visable;
+    }
+    bool getVisable(){
+        return visable;
+    }
 protected:
     string name;
+    bool visable = true;
     wxImage paint_img;
     wxImage stroke_img;
     set<wxPoint> stroke_set;

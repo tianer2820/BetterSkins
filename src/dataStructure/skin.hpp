@@ -100,6 +100,9 @@ public:
         for (auto i = layers.begin(); i != layers.end(); i++)
         {
             Layer *layer = *i;
+            if(!layer->getVisable()){
+                continue;
+            }
             wxImage layer_render = layer->render();
             alphaOver(render, layer_render);
             

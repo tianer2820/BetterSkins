@@ -8,12 +8,16 @@
 
 #include "color/color.h"
 
+/**
+ * set all pixels to transparent
+ */
 void clearAlpha(wxImage &img);
-void drawAlpha(wxImage &img);
 
 /**
  * this will draw the checker pattern on the whole image
  */
+void drawAlpha(wxImage &img);
+
 void drawAlpha(wxImage &img)
 {
     int w = img.GetWidth();
@@ -46,9 +50,6 @@ void drawAlpha(wxImage &img)
     }
 }
 
-/**
- * set all pixels to transparent
- */
 void clearAlpha(wxImage &img)
 {
     int w = img.GetWidth();

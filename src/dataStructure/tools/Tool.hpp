@@ -22,6 +22,8 @@ enum class ToolType{
 class Tool
 {
 public:
+    wxString icon = _T("pen.png");
+
     void setLayer(Layer *layer)
     {
         current_layer = layer;
@@ -67,7 +69,7 @@ protected:
     bool is_down = false;
     map<string, int> properties;
     ToolType tool_type = ToolType::PEN;
-
 };
+
 
 #endif // TOOL_H

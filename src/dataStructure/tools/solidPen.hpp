@@ -20,6 +20,7 @@ public:
         setProperty("a", 255);
         setProperty("SIZE", 1);
         tool_type = ToolType::PEN;
+        icon = _T("pen.png");
     }
     virtual void moveTo(int x, int y)
     {
@@ -62,6 +63,5 @@ public:
 protected:
     int x, y;
 };
-
 
 #endif // SOLID_PEN

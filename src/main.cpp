@@ -592,43 +592,31 @@ wxDEFINE_EVENT(EVT_TOOL_CHANGE, wxCommandEvent);
 class ToolBox : public wxSplitterWindow
 {
 public:
-    static const int tool_count = 3;
     ToolBox(wxWindow *parent, wxWindowID id = wxID_ANY) : wxSplitterWindow(parent, id)
     {
         this->SetWindowStyle(wxSP_3DSASH | wxSP_LIVE_UPDATE | wxSP_NO_XP_THEME);
+
+        // create new tool objects
+        tool_list.push_back(new SolidPen());
+        tool_list.push_back(new NoisePen());
+        tool_list.push_back(new Eraser());
+
         button_list = new ToolButtonList(this);
-        for (int i = 0; i < tool_count; i++)
+        option_book = new wxSimplebook(this, wxID_ANY);
+
+        for (auto i = tool_list.begin(); i != tool_list.end(); i++)
         {
             wxImage icon;
-            switch (i)
-            {
-            case 0:
-                // pencil
-                icon.LoadFile(_T("./resources/icons/pen.png"));
-                break;
+            wxString icon_path = _T("./resources/icons/");
 
-            case 1:
-                // noise
-                icon.LoadFile(_T("./resources/icons/noise.png"));
-                break;
-            
-            case 2:
-                // eraser
-                icon.LoadFile(_T("./resources/icons/eraser.png"));
-                break;
-            
-            default:
-                break;
-            }
+            icon.LoadFile(icon_path + (*i)->icon);
+                
             icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
 
             wxBitmapToggleButton *button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
             button_list->addButton(button);
-        }
 
-        option_book = new wxSimplebook(this, wxID_ANY);
-        for (int i = 0; i < tool_count; i++)
-        {
+            // prepare control panel
             wxScrolledWindow *panel = new wxScrolledWindow(option_book);
             panel->SetScrollRate(0, 5);
             ToolOptionSizeCtrl *size_ctrl = new ToolOptionSizeCtrl(panel);
@@ -637,16 +625,7 @@ public:
             panel->SetSizer(grid);
             size_ctrls.push_back(size_ctrl);
 
-            // add special tool ctrls.
-            switch (i)
-            {
-            case 0:
-                /* code */
-                break;
-
-            default:
-                break;
-            }
+            // add special ctrls
 
             option_book->AddPage(panel, wxString::FromUTF8("Tool"));
         }
@@ -656,10 +635,6 @@ public:
         Bind(EVT_BUTTON_LIST_CHANGED, &ToolBox::onButtonChange, this);
         Bind(EVT_TOOL_OPTION_CHANGE, &ToolBox::onOptionChange, this);
 
-        // create new tool objects
-        tool_list.push_back(new SolidPen());
-        tool_list.push_back(new NoisePen());
-        tool_list.push_back(new Eraser());
     }
     ~ToolBox()
     {

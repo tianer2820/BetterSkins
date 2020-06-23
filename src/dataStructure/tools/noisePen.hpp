@@ -19,6 +19,8 @@ public:
         setProperty("SIZE", 1);
         e.seed(wxGetLocalTime());
         tool_type = ToolType::PEN;
+
+        icon = _T("noise.png");
     }
     virtual void moveTo(int x, int y)
     {

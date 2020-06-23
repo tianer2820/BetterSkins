@@ -56,7 +56,15 @@ public:
     virtual LayerModifier *copy() = 0;
     string name = "Modifier Base";
 
+    void setVisable(bool visable = true){
+        this->visable = visable;
+    }
+    bool getVisable(){
+        return visable;
+    }
+
 protected:
+    bool visable = true;
     void sendLayerUpdateEvent(){
         if(control_panel != NULL){
         wxCommandEvent* event = new wxCommandEvent(EVT_LAYER_UPDATE, control_panel->GetId());

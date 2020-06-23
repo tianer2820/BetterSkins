@@ -214,6 +214,9 @@ public:
         for (auto i = modifier_list.begin(); i != modifier_list.end(); i++)
         {
             LayerModifier *modifier = *i;
+            if(!modifier->getVisable()){
+                continue;
+            }
             modifier->render(raw);
         }
         return raw;

@@ -175,6 +175,14 @@ protected:
     double drag_point_y = 0;
     double scale = 10;
 
+    //caches
+    bool need_redraw_bg = true;
+    bool need_redraw_skin = true;
+    bool need_redraw_block = true;
+    wxImage bg_checker;
+    wxImage skin_render;
+    wxImage block_render;
+
     void screenToImage(int x, int y, double &out_x, double &out_y)
     {
         out_x = (x - offset_x) / scale;
@@ -216,6 +224,7 @@ protected:
                 // start drawing a stroke
                 if (current_pen != NULL)
                 {
+                    need_redraw_skin = true;
                     this->CaptureMouse();
                     is_drawing = true;
                     current_pen->setLayer(current_layer);
@@ -228,18 +237,12 @@ protected:
             }
             if (is_drawing)
             {
-                if (x < 0 || x >= 640 || y < 0 || y >= 640)
+                need_redraw_skin = true;
+                if (current_pen != NULL)
                 {
-                    // don't paint
-                }
-                else
-                {
-                    if (current_pen != NULL)
-                    {
-                        int x1, y1;
-                        screenToImage(x, y, x1, y1);
-                        current_pen->moveTo(x1, y1);
-                    }
+                    int x1, y1;
+                    screenToImage(x, y, x1, y1);
+                    current_pen->moveTo(x1, y1);
                 }
                 if (event.LeftUp())
                 {
@@ -255,6 +258,9 @@ protected:
             if (event.MiddleDown())
             {
                 // start drag
+                need_redraw_skin = true;
+                need_redraw_block = true;
+
                 screenToImage(event.GetX(), event.GetY(), drag_point_x, drag_point_y);
                 is_dragging = true;
                 SetCursor(wxCursor(wxCURSOR_SIZING));
@@ -265,6 +271,9 @@ protected:
             }
             if (is_dragging)
             {
+                need_redraw_skin = true;
+                need_redraw_block = true;
+
                 offset_x = event.GetX() - drag_point_x * scale;
                 offset_y = event.GetY() - drag_point_y * scale;
                 if (event.MiddleUp())
@@ -283,6 +292,9 @@ protected:
         if (event.GetWheelRotation() != 0)
         {
             // zoom
+            need_redraw_skin = true;
+            need_redraw_block = true;
+
             int rotation = event.GetWheelRotation() / wheel_delta;
             double factor = pow(1.2, rotation);
             int s_offset_x = offset_x - x;
@@ -291,62 +303,73 @@ protected:
             offset_y += s_offset_y * (factor - 1);
             scale *= factor;
         }
-
         Refresh();
         event.Skip();
     }
     void onPaint(wxPaintEvent &event)
     {
         // fill alpha background
-        wxImage img(GetSize());
-        img.InitAlpha();
-        drawAlpha(img);
+        if (need_redraw_bg)
+        {
+            bg_checker = wxImage(GetSize());
+            if (!bg_checker.IsOk())
+            {
+                // size is too small?
+                return;
+            }
+            bg_checker.InitAlpha();
+            drawAlpha(bg_checker);
+            need_redraw_bg = false;
+        }
 
         wxAutoBufferedPaintDC dc(this);
-        dc.DrawBitmap(wxBitmap(img), 0, 0);
+        dc.DrawBitmap(wxBitmap(bg_checker), 0, 0);
         wxGraphicsContext *gc = wxGraphicsContext::Create(dc);
 
         // render skin
         if (current_skin != NULL)
         {
-            wxImage img2 = current_skin->render();
-            u_char *source_data = img2.GetData();
-            u_char *source_alpha = img2.GetAlpha();
-            int source_w = img2.GetWidth();
-            int source_h = img2.GetHeight();
-
-            wxImage img_screen = wxImage(this->GetSize());
-            img_screen.InitAlpha();
-            u_char *data = img_screen.GetData();
-            u_char *alpha = img_screen.GetAlpha();
-            int w = img_screen.GetWidth();
-            int h = img_screen.GetHeight();
-
-            for (int y = 0; y < h; y++)
+            int w = this->GetSize().GetWidth();
+            int h = this->GetSize().GetHeight();
+            if (need_redraw_skin)
             {
-                for (int x = 0; x < w; x++)
-                {
-                    int pixel_x, pixel_y;
-                    screenToImage(x, y, pixel_x, pixel_y);
-                    int index = y * w + x;
-                    int source_index = pixel_y * source_w + pixel_x;
-                    if (pixel_x < 0 || pixel_y < 0 ||
-                        pixel_x >= source_w || pixel_y >= source_h)
-                    {
-                        // out of range, set alpha
-                        alpha[index] = 72;
-                        continue;
-                    }
-                    // else copy data and alpha
-                    for (int i = 0; i < 3; i++)
-                    {
-                        data[index * 3 + i] = source_data[source_index * 3 + i];
-                    }
-                    alpha[index] = source_alpha[source_index];
-                }
-            }
+                wxImage img2 = current_skin->render();
+                u_char *source_data = img2.GetData();
+                u_char *source_alpha = img2.GetAlpha();
+                int source_w = img2.GetWidth();
+                int source_h = img2.GetHeight();
 
-            gc->DrawBitmap(wxBitmap(img_screen, 32), 0, 0, w, h);
+                skin_render = wxImage(this->GetSize());
+                skin_render.InitAlpha();
+                u_char *data = skin_render.GetData();
+                u_char *alpha = skin_render.GetAlpha();
+
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        int pixel_x, pixel_y;
+                        screenToImage(x, y, pixel_x, pixel_y);
+                        int index = y * w + x;
+                        int source_index = pixel_y * source_w + pixel_x;
+                        if (pixel_x < 0 || pixel_y < 0 ||
+                            pixel_x >= source_w || pixel_y >= source_h)
+                        {
+                            // out of range, set alpha
+                            alpha[index] = 72;
+                            continue;
+                        }
+                        // else copy data and alpha
+                        for (int i = 0; i < 3; i++)
+                        {
+                            data[index * 3 + i] = source_data[source_index * 3 + i];
+                        }
+                        alpha[index] = source_alpha[source_index];
+                    }
+                }
+                need_redraw_skin = false;
+            }
+            gc->DrawBitmap(wxBitmap(skin_render, 32), 0, 0, w, h);
 
             //draw outline
             SkinFormat format;
@@ -366,32 +389,46 @@ protected:
             default:
                 break;
             }
-            for (auto i = format.begin(); i != format.end(); i++)
+
+            if (need_redraw_block)
             {
-                TextBlock block = *i;
-                int block_screen_x, block_screen_y;
-                imageToScreen(block.left, block.top, block_screen_x, block_screen_y);
+                block_render = wxImage(this->GetSize());
+                block_render.InitAlpha();
+                clearAlpha(block_render);
+                wxGraphicsContext *mgc = wxGraphicsContext::Create(block_render);
 
-                // draw the shadow first
-                gc->SetPen(wxPen(wxColour(0, 0, 0), 1));
-                gc->SetFont(*wxNORMAL_FONT, wxColour(0, 0, 0));
-                gc->DrawRectangle(block_screen_x + 1,
-                                  block_screen_y + 1,
-                                  block.width * scale,
-                                  block.height * scale);
-                gc->DrawText(wxString(block.name), block_screen_x + 1,
-                             block_screen_y + 1);
+                for (auto i = format.begin(); i != format.end(); i++)
+                {
+                    TextBlock block = *i;
+                    int block_screen_x, block_screen_y;
+                    imageToScreen(block.left, block.top, block_screen_x, block_screen_y);
 
-                // now draw the white line
-                gc->SetPen(wxPen(wxColour(255, 255, 255), 1));
-                gc->SetFont(*wxNORMAL_FONT, wxColour(255, 255, 255));
-                gc->DrawRectangle(block_screen_x,
-                                  block_screen_y,
-                                  block.width * scale,
-                                  block.height * scale);
-                gc->DrawText(wxString(block.name), block_screen_x,
-                             block_screen_y);
+                    // draw the shadow first
+                    mgc->SetPen(wxPen(wxColour(0, 0, 0), 1));
+                    mgc->SetFont(*wxNORMAL_FONT, wxColour(0, 0, 0));
+                    mgc->DrawRectangle(block_screen_x + 1,
+                                      block_screen_y + 1,
+                                      block.width * scale,
+                                      block.height * scale);
+                    mgc->DrawText(wxString(block.name), block_screen_x + 1,
+                                 block_screen_y + 1);
+
+                    // now draw the white line
+                    mgc->SetPen(wxPen(wxColour(255, 255, 255), 1));
+                    mgc->SetFont(*wxNORMAL_FONT, wxColour(255, 255, 255));
+                    mgc->DrawRectangle(block_screen_x,
+                                      block_screen_y,
+                                      block.width * scale,
+                                      block.height * scale);
+                    mgc->DrawText(wxString(block.name), block_screen_x,
+                                 block_screen_y);
+                    
+                    
+                }
+                delete mgc;
+                need_redraw_block = false;
             }
+            gc->DrawBitmap(wxBitmap(block_render), 0, 0, w, h);
         }
         // render brush square
         if (current_pen != nullptr)
@@ -416,6 +453,9 @@ protected:
     }
     void onSize()
     {
+        need_redraw_skin = true;
+        need_redraw_block = true;
+        need_redraw_bg = true;
         Refresh();
     }
     wxSize DoGetBestSize() const override
@@ -542,7 +582,6 @@ protected:
  * the string data is used as the option name;
  * the int data is used as the option value;
  */
-
 wxDECLARE_EVENT(EVT_TOOL_CHANGE, wxCommandEvent);
 wxDEFINE_EVENT(EVT_TOOL_CHANGE, wxCommandEvent);
 /**
@@ -627,7 +666,7 @@ public:
         panel->SetScrollRate(0, 5);
         grid = new wxGridSizer(2);
 
-        wxSpinCtrl* lightness_spin = new wxSpinCtrl(panel);
+        wxSpinCtrl *lightness_spin = new wxSpinCtrl(panel);
         lightness_spin->SetMin(-255);
         lightness_spin->SetMax(255);
         lightness_spin->SetValue(10);
@@ -695,14 +734,17 @@ protected:
     wxSpinCtrl *size_ctrl;
 
     // special ctrls and brushes
-    LightenDarkenTool* lighten_darken_tool;
-    wxCheckBox* incremental_box;
-    void onLightnessChange(wxSpinEvent &event){
+    LightenDarkenTool *lighten_darken_tool;
+    wxCheckBox *incremental_box;
+    void onLightnessChange(wxSpinEvent &event)
+    {
         lighten_darken_tool->setProperty("LIGHTNESS", event.GetPosition());
     }
-    void onIncremental(wxCommandEvent &event){
+    void onIncremental(wxCommandEvent &event)
+    {
         int is_incremental = 0;
-        if(incremental_box->GetValue()){
+        if (incremental_box->GetValue())
+        {
             is_incremental = 1;
         }
         lighten_darken_tool->setProperty("INCREMENTAL", is_incremental);

@@ -156,6 +156,13 @@ public:
     {
         current_pen = pen;
     }
+    /**
+     * call this to refresh the skin render. This is used by the layer modifier events.
+     */
+    void redraw(){
+        need_redraw_skin = true;
+        Refresh();
+    }
 
 protected:
     Skin *current_skin = NULL;
@@ -594,7 +601,7 @@ protected:
     }
     void onNeedRefresh(wxCommandEvent &event)
     {
-        canvas->Refresh();
+        canvas->redraw();
         canvas->Update();
     }
     void onColorChange(wxCommandEvent &event)

@@ -7,6 +7,8 @@
 #include <wx/wx.h>
 #endif
 
+#include <wx/listbook.h>
+
 #include "dataStructure/layer.hpp"
 #include "dataStructure/layerModifier.hpp"
 

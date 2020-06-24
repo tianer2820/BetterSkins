@@ -4,7 +4,6 @@
 #include <wx/wx.h>
 #endif
 
-#include <wx/listbook.h>
 #include <wx/splitter.h>
 #include <wx/tglbtn.h>
 #include <wx/simplebook.h>
@@ -17,14 +16,12 @@ using json = nlohmann::json;
 
 #include "customUI/colorPickers/advColorPicker.hpp"
 #include "customUI/skinBrowser.h"
-#include "customUI/layerModifierUIs/colorRampCtrl.hpp"
 #include "customUI/LayerControlPanel.hpp"
 #include "customUI/LayerViewer.hpp"
 #include "customUI/referenceWindow.hpp"
 
 #include "dataStructure/skin.hpp"
 #include "dataStructure/command.hpp"
-#include "dataStructure/layerModifier.hpp"
 #include "dataStructure/layer.hpp"
 #include "dataStructure/skin.hpp"
 #include "dataStructure/SkinFormat.hpp"

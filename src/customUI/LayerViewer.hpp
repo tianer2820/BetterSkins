@@ -7,8 +7,9 @@
 #include <wx/wx.h>
 #endif
 
-#include "../dataStructure/skin.hpp"
+#include <wx/dataview.h>
 
+#include "../dataStructure/skin.hpp"
 
 wxDECLARE_EVENT(EVT_LAYER_CHANGE, wxCommandEvent);
 wxDEFINE_EVENT(EVT_LAYER_CHANGE, wxCommandEvent);
@@ -28,8 +29,14 @@ public:
     LayerViewer(wxWindow *parent, wxWindowID id = wxID_ANY) : wxPanel(parent, id)
     {
         wxBoxSizer *main_box = new wxBoxSizer(wxVERTICAL);
-        list_box = new wxListBox(this, wxID_ANY);
-        Bind(wxEVT_LISTBOX, &LayerViewer::onLayerChange, this, list_box->GetId());
+        list_box = new wxDataViewListCtrl(this, wxID_ANY);
+        list_box->AppendTextColumn(_T("Layer Name"), wxDATAVIEW_CELL_EDITABLE);
+        list_box->AppendToggleColumn(_T("Visable"));
+
+        Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &LayerViewer::onLayerChange, this, list_box->GetId());
+        Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &LayerViewer::onRename, this, list_box->GetId());
+        Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &LayerViewer::onDoubleClick, this, list_box->GetId());
+        Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &LayerViewer::onToggleVisable, this, list_box->GetId());
         main_box->Add(list_box, 1, wxBOTTOM | wxEXPAND, 5);
 
         wxBoxSizer *button_box = new wxBoxSizer(wxHORIZONTAL);
@@ -61,63 +68,124 @@ public:
     {
         current_document = skin;
         // delete all existing items
-        list_box->Clear();
+        list_box->DeleteAllItems();
         // add new items
         int len = skin->getLayerNum();
         for (int i = 0; i < len; i++)
         {
             Layer *layer = skin->getLayer(i);
-            list_box->Insert(layer->getName(), 0);
+            wxVector<wxVariant> item;
+            item.push_back(wxVariant(layer->getName()));
+            item.push_back(wxVariant(layer->getVisable()));
+            list_box->PrependItem(item);
         }
         setActiveLayer();
     }
     void refreshNames()
     {
-        int len = list_box->GetCount();
+        int len = list_box->GetItemCount();
         for (int i = 0; i < len; i++)
         {
             int index = len - 1 - i;
             string new_name = current_document->getLayer(index)->getName();
-            if (list_box->GetString(i).ToStdString() != new_name)
+            wxVariant value;
+            list_box->GetValue(value, i, 0);
+            if (value.GetString().ToStdString() != new_name)
             {
-                list_box->SetString(i, wxString::FromUTF8(new_name));
+                value = new_name;
+                list_box->SetValue(value, i, 0);
             }
         }
     }
     void clear()
     {
         current_document = NULL;
-        list_box->Clear();
+        list_box->DeleteAllItems();
     }
 
     void setActiveLayer(int index = 0)
     {
-        if (list_box->GetCount() != 0 && index < list_box->GetCount())
+        if (list_box->GetItemCount() != 0 && index < list_box->GetItemCount())
         {
-            list_box->SetSelection(index);
+            list_box->SelectRow(index);
             sendLayerChangeEvent();
         }
     }
 
 protected:
     Skin *current_document = NULL;
-    wxListBox *list_box = NULL;
+    wxDataViewListCtrl *list_box = NULL;
     void sendLayerChangeEvent()
     {
         wxCommandEvent *event = new wxCommandEvent(EVT_LAYER_CHANGE, GetId());
         event->SetEventObject(this);
-        int index = list_box->GetCount() - 1 - list_box->GetSelection();
-        if (list_box->GetSelection() == -1)
+        int selected_row = list_box->GetSelectedRow();
+        int index;
+        if (selected_row == wxNOT_FOUND)
         {
             index = -1;
         }
+        else
+        {
+            index = list_box->GetItemCount() - 1 - selected_row;
+        }
+
         event->SetInt(index);
+        wxQueueEvent(GetEventHandler(), event);
+    }
+    void sendLayerUpdateEvent(){
+        wxCommandEvent* event = new wxCommandEvent(EVT_LAYER_UPDATE, GetId());
+        event->SetEventObject(this);
         wxQueueEvent(GetEventHandler(), event);
     }
     void onLayerChange(wxCommandEvent &event)
     {
+        if(list_box->GetSelectedRow() == wxNOT_FOUND && list_box->GetItemCount() > 0){
+            // deselected, ignore. You must select something...
+            return;
+        }
         sendLayerChangeEvent();
     }
+    void onDoubleClick(wxDataViewEvent &event){
+        if(event.GetColumn() == 0){
+            list_box->StartEditor(event.GetItem(), 0);
+        } else if(event.GetColumn() == 1){
+            int row = list_box->GetSelectedRow();
+            bool value = list_box->GetToggleValue(row, 1);
+            list_box->SetToggleValue(!value, row, 1);
+        }
+    }
+    void onRename(wxDataViewEvent &event){
+        int col = event.GetColumn();
+        if(col != 0){
+            // some other things are changed..
+            event.Skip();
+            return;
+        }
+        if(current_document != nullptr){
+            Layer* active_layer = current_document->getLayer(list_box->GetItemCount() - list_box->GetSelectedRow() - 1);
+            active_layer->setName(event.GetValue().GetString().ToStdString());
+            sendLayerChangeEvent();
+        }
+    }
+    void onToggleVisable(wxDataViewEvent &event){
+        if (event.GetColumn() != 1)
+        {
+            // some thing else is changed, ignore
+            event.Skip();
+            return;
+        }
+        if(current_document != nullptr){
+            Layer* active_layer = current_document->getLayer(list_box->GetItemCount() - list_box->GetSelectedRow() - 1);
+            wxVariant value = event.GetValue();
+            wxLogDebug(value.GetType());
+            active_layer->setVisable(list_box->GetToggleValue(list_box->GetSelectedRow(), 1));
+            sendLayerChangeEvent();
+            sendLayerUpdateEvent();
+        }
+        
+    }
+    
     void onAdd(wxCommandEvent &event)
     {
         if (current_document == NULL)
@@ -127,27 +195,30 @@ protected:
         wxSize size = current_document->getLayerSize();
         Layer *layer = new Layer("new layer", size);
         current_document->addLayer(layer);
-        list_box->Insert(layer->getName(), 0);
-        list_box->SetSelection(0);
+        wxVector<wxVariant> item;
+        item.push_back(wxVariant(layer->getName()));
+        item.push_back(wxVariant(layer->getVisable()));
+        list_box->PrependItem(item);
+        list_box->SelectRow(0);
         sendLayerChangeEvent();
         sendUpdateEvent();
     }
     void onDelete(wxCommandEvent &event)
     {
-        int index = list_box->GetSelection();
-        if (current_document == NULL || index == -1)
+        int index = list_box->GetSelectedRow();
+        if (current_document == NULL || index == wxNOT_FOUND)
         {
             return;
         }
-        int index2 = list_box->GetCount() - 1 - index;
-        list_box->Delete(index);
+        int index2 = list_box->GetItemCount() - 1 - index;
+        list_box->DeleteItem(index);
         if (index - 1 >= 0)
         {
-            list_box->SetSelection(index - 1);
+            list_box->SelectRow(index - 1);
         }
-        else if (list_box->GetCount() != 0)
+        else if (list_box->GetItemCount() != 0)
         {
-            list_box->SetSelection(0);
+            list_box->SelectRow(0);
         }
 
         current_document->deleteLayer(index2);
@@ -156,50 +227,69 @@ protected:
     }
     void onMoveUp(wxCommandEvent &event)
     {
-        int index = list_box->GetSelection();
-        if (current_document == NULL || index == -1 || index == 0)
+        int index = list_box->GetSelectedRow();
+        if (current_document == NULL || index == wxNOT_FOUND || index == 0)
         {
             return;
         }
         // change list box
-        wxString name = list_box->GetString(index);
-        list_box->Delete(index);
-        list_box->Insert(name, index - 1);
-        list_box->SetSelection(index - 1);
+        wxVector<wxVariant> item;
+        wxVariant value;
+        for (int i = 0; i < list_box->GetColumnCount(); i++)
+        {
+            list_box->GetValue(value, index, i);
+            item.push_back(value);
+        }
+        list_box->DeleteItem(index);
+        list_box->InsertItem(index - 1, item);
+        list_box->SelectRow(index - 1);
         // change document
-        index = list_box->GetCount() - index - 1;
+        index = list_box->GetItemCount() - index - 1;
         current_document->moveLayer(index, index + 1);
         sendUpdateEvent();
     }
     void onMoveDown(wxCommandEvent &event)
     {
-        int index = list_box->GetSelection();
-        if (current_document == NULL || index == -1 || index == list_box->GetCount() - 1)
+        int index = list_box->GetSelectedRow();
+        if (current_document == NULL || index == wxNOT_FOUND || index == list_box->GetItemCount() - 1)
         {
             return;
         }
         // change list box
-        wxString name = list_box->GetString(index);
-        list_box->Delete(index);
-        list_box->Insert(name, index + 1);
-        list_box->SetSelection(index + 1);
+        wxVector<wxVariant> item;
+        wxVariant value;
+        for (int i = 0; i < list_box->GetColumnCount(); i++)
+        {
+            list_box->GetValue(value, index, i);
+            item.push_back(value);
+        }
+        list_box->DeleteItem(index);
+        list_box->InsertItem(index + 1, item);
+        list_box->SelectRow(index + 1);
         // change document
-        index = list_box->GetCount() - index - 1;
+        index = list_box->GetItemCount() - index - 1;
         current_document->moveLayer(index, index - 1);
         sendUpdateEvent();
     }
     void onDuplicate(wxCommandEvent &event)
     {
-        int index = list_box->GetSelection();
-        int count = list_box->GetCount();
-        if (current_document == NULL || index == -1)
+        int index = list_box->GetSelectedRow();
+        int count = list_box->GetItemCount();
+        if (current_document == NULL || index == wxNOT_FOUND)
         {
             return;
         }
         // change list box
-        wxString name = list_box->GetString(index);
-        list_box->Insert(name + "(copy)", index);
-        list_box->SetSelection(index);
+        wxVector<wxVariant> item;
+        wxVariant value;
+        for (int i = 0; i < list_box->GetColumnCount(); i++)
+        {
+            list_box->GetValue(value, index, i);
+            item.push_back(value);
+        }
+        item.at(0) = item.at(0).GetString() + "(copy)";
+        list_box->InsertItem(index, item);
+        list_box->SelectRow(index);
         sendLayerChangeEvent();
         // change document
         index = count - index - 1;
@@ -216,6 +306,5 @@ protected:
         wxQueueEvent(GetEventHandler(), event);
     }
 };
-
 
 #endif // LAYER_VIEWER_H

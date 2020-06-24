@@ -589,7 +589,7 @@ protected:
     }
     void onLayerChange(wxCommandEvent &event)
     {
-        if (myskin->getLayerNum() != 0)
+        if (myskin->getLayerNum() != 0 && event.GetInt() != -1)
         {
             lcp->loadLayer(myskin->getLayer(event.GetInt()));
         }
@@ -715,20 +715,20 @@ protected:
         }
 
         import_dialog->Destroy();
-        canvas->Refresh();
+        canvas->redraw();
         canvas->Update();
     }
 
     void onUndo(wxCommandEvent &event)
     {
         CommandManager::getInstance()->undo();
-        canvas->Refresh();
+        canvas->redraw();
         canvas->Update();
     }
     void onRedo(wxCommandEvent &event)
     {
         CommandManager::getInstance()->redo();
-        canvas->Refresh();
+        canvas->redraw();
         canvas->Update();
     }
 

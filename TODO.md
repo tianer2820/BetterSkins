@@ -17,6 +17,7 @@
 - better modifier viewer
 - The layer overlay modifier
 - enable/disable modifier
+- store data in modifiers, not in uis. let ui read the data from the modifier when displayed
 
 ## Others
 The first release has came out, code cleaning is in progress and more new features are comming...

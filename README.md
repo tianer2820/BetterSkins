@@ -9,7 +9,7 @@ This this another skin maker for minecraft. The purpose is to replace and improv
 This skin maker will be offline, and will mimic the Blender editing style, i.e. layers and modifiers. This will allow the creation of templates and can create good looking skins very fast.
 
 ## Usage
-No release version yet, you will need to compile the source code. When done, run the "Test.exe". I will rename it in the first realease.
+Release versions can be downloaded. Only windows binaries are provided, other users has to compile the code.
 
 ## Build
 Requirements:
@@ -18,7 +18,7 @@ Requirements:
 
 After installing the requirements, you may need to tweak `./CMakeLists.txt`. All lib configurations are done in this top level cmakelist. You shouldn't need to modify anything in the `src` folder.
 
-Then build the project with CMake. When finished, copy the "Test.exe" to appropriate folder, and copy the `resources` folder to the same folder. The executable will read icons and configs from this folder.
+Then build the project with CMake. When finished, copy the "Main.exe" to appropriate folder, and copy the `resources` folder to the same folder. The executable will read icons and configs from this folder.
 
 Notice: If you are using dll build of wxWidgets, you will also need to copy the required dlls to the folder, together with the executable file.
 

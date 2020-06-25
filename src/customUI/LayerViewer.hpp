@@ -177,8 +177,6 @@ protected:
         }
         if(current_document != nullptr){
             Layer* active_layer = current_document->getLayer(list_box->GetItemCount() - list_box->GetSelectedRow() - 1);
-            wxVariant value = event.GetValue();
-            wxLogDebug(value.GetType());
             active_layer->setVisable(list_box->GetToggleValue(list_box->GetSelectedRow(), 1));
             sendLayerChangeEvent();
             sendLayerUpdateEvent();

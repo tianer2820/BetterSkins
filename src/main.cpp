@@ -64,7 +64,7 @@ public:
         Bind(wxEVT_MIDDLE_DOWN, &Canvas::onMouse, this);
         Bind(wxEVT_MIDDLE_UP, &Canvas::onMouse, this);
         Bind(wxEVT_MOUSEWHEEL, &Canvas::onMouse, this);
-        // Bind(wxEVT_COMMAND_RIGHT_CLICK, &Canvas::onMouse, this);
+        Bind(wxEVT_SIZE, &Canvas::onSize, this);
 
         initSkinFormat();
     }
@@ -455,7 +455,7 @@ protected:
 
         delete gc;
     }
-    void onSize()
+    void onSize(wxSizeEvent &event)
     {
         need_redraw_skin = true;
         need_redraw_block = true;

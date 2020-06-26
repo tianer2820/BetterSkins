@@ -16,6 +16,11 @@ using namespace std;
 wxDECLARE_EVENT(EVT_LAYER_UPDATE, wxCommandEvent);
 wxDEFINE_EVENT(EVT_LAYER_UPDATE, wxCommandEvent);
 
+/**
+ * Layer Modifier should store their own data.
+ * UI will be deleted when not on screen, the modifier should be able to remake them.
+ * Modifier should bind the ui to their own handling functions.
+ */
 class LayerModifier
 {
 public:
@@ -25,28 +30,9 @@ public:
     LayerModifier(const LayerModifier &copy)
     {
         name = copy.name;
-        control_panel = NULL;
     }
     virtual ~LayerModifier()
     {
-        // delete the controler panel
-        if (control_panel != NULL)
-        {
-            control_panel->Destroy();
-        }
-    }
-    wxPanel *getControlPanel(wxWindow *new_parent)
-    {
-        if (control_panel == NULL) // if the panel is not created
-        {
-            control_panel = new wxPanel(new_parent);
-            createPanel();
-        }
-        else // if the panel is already created
-        {
-            control_panel->Reparent(new_parent);
-        }
-        return control_panel;
     }
     string getName()
     {
@@ -56,24 +42,29 @@ public:
     virtual LayerModifier *copy() = 0;
     string name = "Modifier Base";
 
-    void setVisable(bool visable = true){
+    void setVisable(bool visable = true)
+    {
         this->visable = visable;
     }
-    bool getVisable(){
+    bool getVisable()
+    {
         return visable;
     }
+    /**
+     * you need to override this method to create your controls on the panel.
+     */
+    virtual void makeUI(wxWindow *panel) = 0;
 
 protected:
     bool visable = true;
-    void sendLayerUpdateEvent(){
-        if(control_panel != NULL){
-        wxCommandEvent* event = new wxCommandEvent(EVT_LAYER_UPDATE, control_panel->GetId());
-        event->SetEventObject(control_panel);
-        wxQueueEvent(control_panel->GetEventHandler(), event);
-        }
+    /**
+     * you should send this event using a ctrl on your panel
+     */
+    wxCommandEvent *createLayerUpdateEvent()
+    {
+        wxCommandEvent *event = new wxCommandEvent(EVT_LAYER_UPDATE);
+        return event;
     }
-    virtual void createPanel() = 0; // used to create the control panel
-    wxPanel *control_panel = NULL;
 };
 
 class LayerGrayModifier : public LayerModifier
@@ -107,12 +98,12 @@ public:
     }
 
 protected:
-    virtual void createPanel()
+    virtual void makeUI(wxWindow *panel) override
     {
-        wxStaticText *label = new wxStaticText(control_panel, wxID_ANY, wxT("No configuration avaliable for this modifier"));
+        wxStaticText *label = new wxStaticText(panel, wxID_ANY, wxT("No configuration avaliable for this modifier"));
         wxBoxSizer *box = new wxBoxSizer(wxVERTICAL);
         box->Add(label, 1, wxALL | wxEXPAND, 5);
-        control_panel->SetSizer(box);
+        panel->SetSizer(box);
     }
 };
 
@@ -125,9 +116,9 @@ public:
     }
     virtual void render(wxImage &raw)
     {
-        u_char* alpha_data = raw.GetAlpha();
+        u_char *alpha_data = raw.GetAlpha();
         int length = raw.GetWidth() * raw.GetHeight();
-        double blend = static_cast<double>(alpha_slider->GetValue()) / 255;
+        double blend = static_cast<double>(alpha_blend) / 255;
         for (int i = 0; i < length; i++)
         {
             alpha_data[i] *= blend;
@@ -137,49 +128,68 @@ public:
     {
         return new LayerAlphaBlendModifier(*this);
     }
-protected:
-    wxSlider* alpha_slider;
-    wxTextCtrl* entry;
-    virtual void createPanel()
+    virtual void makeUI(wxWindow *panel) override
     {
-        alpha_slider = new wxSlider(control_panel, wxID_ANY, 255, 0, 255);
+        alpha_slider = new wxSlider(panel, wxID_ANY, alpha_blend, 0, 255);
         alpha_slider->SetWindowStyleFlag(wxSL_VALUE_LABEL);
-        wxBoxSizer* box = new wxBoxSizer(wxVERTICAL);
-        wxStaticText* label = new wxStaticText(control_panel, wxID_ANY, wxString::FromUTF8("Alpha:"));
+        wxBoxSizer *box = new wxBoxSizer(wxVERTICAL);
+        wxStaticText *label = new wxStaticText(panel, wxID_ANY, wxString::FromUTF8("Alpha:"));
         box->Add(label, 0, wxALL | wxEXPAND, 5);
         box->Add(alpha_slider, 0, wxALL | wxEXPAND, 5);
 
-        entry = new wxTextCtrl(control_panel, wxID_ANY, wxString::FromUTF8("255"));
+        entry = new wxTextCtrl(panel, wxID_ANY, wxString(to_string(alpha_blend)));
         wxIntegerValidator<int> val;
         val.SetMin(0);
         val.SetMax(255);
         entry->SetValidator(val);
         box->Add(entry, 0, wxALL | wxEXPAND, 5);
-        control_panel->SetSizer(box);
-        control_panel->Bind(wxEVT_SLIDER, &LayerAlphaBlendModifier::onValueChange, this, alpha_slider->GetId());
-        control_panel->Bind(wxEVT_TEXT, &LayerAlphaBlendModifier::onEntryChange, this, entry->GetId());
+        panel->SetSizer(box);
+        panel->Bind(wxEVT_SLIDER, &LayerAlphaBlendModifier::onValueChange, this, alpha_slider->GetId());
+        panel->Bind(wxEVT_TEXT, &LayerAlphaBlendModifier::onEntryChange, this, entry->GetId());
     }
-    void onValueChange(wxCommandEvent& event){
-        sendLayerUpdateEvent();
+
+protected:
+    int alpha_blend = 255;
+    wxSlider *alpha_slider;
+    wxTextCtrl *entry;
+
+    void onValueChange(wxCommandEvent &event)
+    {
+        wxCommandEvent *e = createLayerUpdateEvent();
+        e->SetEventObject(alpha_slider);
+        e->SetId(alpha_slider->GetId());
+        wxQueueEvent(alpha_slider->GetEventHandler(), e);
+
         entry->ChangeValue(to_string(alpha_slider->GetValue()));
+        alpha_blend = alpha_slider->GetValue();
     }
-    void onEntryChange(wxCommandEvent& event){
-        sendLayerUpdateEvent();
+    void onEntryChange(wxCommandEvent &event)
+    {
+        wxCommandEvent *e = createLayerUpdateEvent();
+        e->SetEventObject(entry);
+        e->SetId(entry->GetId());
+        wxQueueEvent(entry->GetEventHandler(), e);
+
         alpha_slider->SetValue(stoi(entry->GetValue().ToStdString()));
+        alpha_blend = stoi(entry->GetValue().ToStdString());
     }
 };
 
-class LayerColorRampModifier : public LayerModifier{
-    public:
-    LayerColorRampModifier(){
+class LayerColorRampModifier : public LayerModifier
+{
+public:
+    LayerColorRampModifier()
+    {
         name = "Color Ramp";
     }
-    virtual void render(wxImage &raw){
-        u_char* rgb = raw.GetData();
+    virtual void render(wxImage &raw)
+    {
+        u_char *rgb = raw.GetData();
         int w = raw.GetWidth();
         int h = raw.GetHeight();
 
-        for(int i = 0; i < w * h; i++){
+        for (int i = 0; i < w * h; i++)
+        {
             int index = i * 3;
             int irgb[3];
             for (int c = 0; c < 3; c++)
@@ -187,7 +197,7 @@ class LayerColorRampModifier : public LayerModifier{
                 irgb[c] = rgb[index + c];
             }
             int value = Color::RGB2GRAY(irgb);
-            RGBColor color = ramp->mapColor(value);
+            RGBColor color = getColorAt(value);
             color.getRGB(irgb);
             for (int c = 0; c < 3; c++)
             {
@@ -195,49 +205,126 @@ class LayerColorRampModifier : public LayerModifier{
             }
         }
     }
-    virtual LayerModifier *copy(){
+    virtual LayerModifier *copy()
+    {
         return new LayerColorRampModifier(*this);
-    }
-    private:
-    ColorRampBar* ramp = nullptr;
-
-    void onRampChanged(wxCommandEvent& event){
-        sendLayerUpdateEvent();
-    }
-
-    void onAdd(wxCommandEvent& event){
-        ramp->add();
-        sendLayerUpdateEvent();
-    }
-    void onDelete(wxCommandEvent& event){
-        ramp->remove();
-        sendLayerUpdateEvent();
     }
 
     // used to create the control panel
-    virtual void createPanel(){
-        ramp = new ColorRampBar(this->control_panel);
-        control_panel->Bind(EVT_COLOR_RAMP_CHANGE, &LayerColorRampModifier::onRampChanged, this);
+    virtual void makeUI(wxWindow *panel)
+    {
+        ramp = new ColorRampBar(panel);
+        if(is_init){
+            doUpdate();
+            is_init = false;
+        } else{
+            ramp->init(color_list, position_list);
+        }
 
-        wxButton* add_button = new wxButton(this->control_panel, wxID_ANY, "+");
+        panel->Bind(EVT_COLOR_RAMP_CHANGE, &LayerColorRampModifier::onRampChanged, this);
+
+        wxButton *add_button = new wxButton(panel, wxID_ANY, "+");
         add_button->SetMaxSize(wxSize(30, 30));
-        control_panel->Bind(wxEVT_BUTTON, &LayerColorRampModifier::onAdd, this, add_button->GetId());
-        
-        wxButton* delete_button = new wxButton(this->control_panel, wxID_ANY, "-");
-        delete_button->SetMaxSize(wxSize(30, 30));
-        control_panel->Bind(wxEVT_BUTTON, &LayerColorRampModifier::onDelete, this, delete_button->GetId());
+        panel->Bind(wxEVT_BUTTON, &LayerColorRampModifier::onAdd, this, add_button->GetId());
 
-        wxBoxSizer* box = new wxBoxSizer(wxVERTICAL);
-        wxBoxSizer* box2 = new wxBoxSizer(wxHORIZONTAL);
+        wxButton *delete_button = new wxButton(panel, wxID_ANY, "-");
+        delete_button->SetMaxSize(wxSize(30, 30));
+        panel->Bind(wxEVT_BUTTON, &LayerColorRampModifier::onDelete, this, delete_button->GetId());
+
+        wxBoxSizer *box = new wxBoxSizer(wxVERTICAL);
+        wxBoxSizer *box2 = new wxBoxSizer(wxHORIZONTAL);
         box->Add(ramp, 0, wxEXPAND);
         box->Add(box2, 0, wxEXPAND);
         box2->AddStretchSpacer();
         box2->Add(add_button, 0, wxALL, 2);
         box2->Add(delete_button, 0, wxALL, 2);
 
-        control_panel->SetSizer(box);
+        panel->SetSizer(box);
+    }
+
+private:
+    ColorRampBar *ramp = nullptr;
+    vector<RGBColor> color_list;
+    vector<int> position_list;
+
+    bool is_init = true;
+
+    void doUpdate(){
+        wxCommandEvent* event = createLayerUpdateEvent();
+        event->SetId(ramp->GetId());
+        event->SetEventObject(ramp);
+        wxQueueEvent(ramp->GetEventHandler(), event);
+
+        color_list = ramp->getColorList();
+        position_list = ramp->getPosList();
+    }
+
+    void onRampChanged(wxCommandEvent &event)
+    {
+        doUpdate();
+    }
+    void onAdd(wxCommandEvent &event)
+    {
+        ramp->add();
+        doUpdate();
+    }
+    void onDelete(wxCommandEvent &event)
+    {
+        ramp->remove();
+        doUpdate();
+    }
+
+    RGBColor getColorAt(int pos)
+    {
+        if (color_list.size() < 1)
+        {
+            return RGBColor(0, 0, 0);
+        }
+        int index = position_list.size() - 1;
+        for (int i = 0; i < position_list.size(); i++)
+        {
+            int value = position_list.at(i);
+            if (value >= pos)
+            {
+                index = i - 1;
+                break;
+            }
+        }
+        if (index < 0)
+        {
+            // before first
+            return color_list.at(0);
+        }
+        if (index >= position_list.size() - 1)
+        {
+            // after last
+            return color_list.at(position_list.size() - 1);
+        }
+        // in middle
+        RGBColor c0 = color_list.at(index);
+        RGBColor c1 = color_list.at(index + 1);
+        int pos0 = position_list.at(index);
+        int pos1 = position_list.at(index + 1);
+        double mix_percent = static_cast<double>(pos - pos0) / static_cast<double>(pos1 - pos0);
+        return mixRGB(c0, c1, mix_percent);
+    }
+    RGBColor mixRGB(RGBColor c0, RGBColor c1, double percent)
+    {
+        int rgb0[3];
+        int rgb1[3];
+        c0.getRGB(rgb0);
+        c1.getRGB(rgb1);
+        int out[3];
+        for (int i = 0; i < 3; i++)
+        {
+            out[i] = rgb0[i] * (1 - percent) + rgb1[i] * percent;
+        }
+        int alpha = c0.getAlpha() * percent + c1.getAlpha() * (1 - percent);
+        RGBColor c_out;
+        c_out.setRGB(out);
+        c_out.setAlpha(alpha);
+        return c_out;
     }
 };
-
 
 #endif // LAYER_MODIFIER_H

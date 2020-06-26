@@ -79,18 +79,16 @@ public:
             { // only hide if the panel is not deleted
                 page->Show(false);
             }
-            list_book->RemovePage(0);
+            list_book->DeletePage(0);
         }
         // set active layer
         active_layer = layer;
         // add new pages
-        vector<LayerModifier *> layers = layer->getModifierList();
-        for (auto i = layers.begin(); i != layers.end(); i++)
+        vector<LayerModifier *> modifier_list = layer->getModifierList();
+        for (auto i = modifier_list.begin(); i != modifier_list.end(); i++)
         {
             LayerModifier *modifier = *i;
-            wxPanel *panel = modifier->getControlPanel(this->list_book);
-            list_book->AddPage(panel, wxString::FromUTF8(modifier->getName()));
-            panel->Show();
+            prepareModifierUI(modifier);
         }
         // load name
         name_ctrl->ChangeValue(wxString::FromUTF8(active_layer->getName()));
@@ -116,6 +114,47 @@ protected:
     wxTextCtrl *name_ctrl;
     wxListbook *list_book;
     Layer *active_layer = NULL;
+
+    void prepareModifierUI(LayerModifier *modifier)
+    {
+        wxPanel *panel = new wxPanel(list_book);
+        wxPanel *control_panel = new wxPanel(panel);
+        modifier->makeUI(control_panel);
+        wxCheckBox *visable_box = new wxCheckBox(panel, wxID_ANY, _T("Visable"));
+        wxBoxSizer *box = new wxBoxSizer(wxVERTICAL);
+
+        box->Add(visable_box, 0, wxALL | wxEXPAND, 2);
+        box->Add(control_panel, 1, wxALL | wxEXPAND, 2);
+        panel->SetSizer(box);
+        visable_box->SetValue(modifier->getVisable());
+        panel->Bind(wxEVT_CHECKBOX, &LayerControlPanel::onToggleVisable, this, visable_box->GetId());
+
+        list_book->AddPage(panel, wxString::FromUTF8(modifier->getName()));
+        panel->Show();
+        box->ShowItems(true);
+    }
+
+    void onToggleVisable(wxCommandEvent &event)
+    {
+        if (active_layer == nullptr)
+        {
+            return; // weird thing happend... but return anyway.
+        }
+        int modifier_index = list_book->GetSelection();
+        if (modifier_index == wxNOT_FOUND)
+        {
+            return; // weird thing happend again..
+        }
+        LayerModifier *modifier = active_layer->getModifierList().at(modifier_index);
+        wxCheckBox *box = dynamic_cast<wxCheckBox *>(event.GetEventObject());
+        if (box == nullptr)
+        {
+            return;
+        }
+        bool value = box->GetValue();
+        modifier->setVisable(value);
+        sendUpdateEvent();
+    }
     void onRename(wxCommandEvent &event)
     {
         if (active_layer == nullptr)
@@ -164,7 +203,7 @@ protected:
             break;
         }
         active_layer->addModifier(modifier);
-        list_book->AddPage(modifier->getControlPanel(list_book), modifier->getName());
+        prepareModifierUI(modifier);
         list_book->SetSelection(list_book->GetPageCount() - 1);
         sendUpdateEvent();
     }
@@ -175,7 +214,7 @@ protected:
         {
             return;
         }
-        list_book->RemovePage(index);
+        list_book->DeletePage(index);
         active_layer->deleteModifier(index);
         sendUpdateEvent();
     }
@@ -222,6 +261,5 @@ protected:
         wxQueueEvent(GetEventHandler(), event);
     }
 };
-
 
 #endif // LAYER_CONTROL_PANEL_H

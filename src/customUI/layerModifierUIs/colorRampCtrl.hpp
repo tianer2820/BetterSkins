@@ -93,6 +93,18 @@ public:
         return getColorAt(value);
     }
 
+    vector<RGBColor> getColorList(){
+        return color_list;
+    }
+    vector<int> getPosList(){
+        return position_list;
+    };
+
+    void init(vector<RGBColor> colors, vector<int> poses){
+        color_list = colors;
+        position_list = poses;
+    }
+
 protected:
     vector<RGBColor> color_list;
     vector<int> position_list;

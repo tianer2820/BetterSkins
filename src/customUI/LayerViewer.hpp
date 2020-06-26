@@ -76,7 +76,7 @@ public:
             Layer *layer = skin->getLayer(i);
             wxVector<wxVariant> item;
             item.push_back(wxVariant(layer->getName()));
-            item.push_back(wxVariant(layer->getVisable()));
+            item.push_back(wxVariant(layer->getVisible()));
             list_box->PrependItem(item);
         }
         setActiveLayer();
@@ -177,7 +177,7 @@ protected:
         }
         if(current_document != nullptr){
             Layer* active_layer = current_document->getLayer(list_box->GetItemCount() - list_box->GetSelectedRow() - 1);
-            active_layer->setVisable(list_box->GetToggleValue(list_box->GetSelectedRow(), 1));
+            active_layer->setVisible(list_box->GetToggleValue(list_box->GetSelectedRow(), 1));
             sendLayerChangeEvent();
             sendLayerUpdateEvent();
         }
@@ -195,7 +195,7 @@ protected:
         current_document->addLayer(layer);
         wxVector<wxVariant> item;
         item.push_back(wxVariant(layer->getName()));
-        item.push_back(wxVariant(layer->getVisable()));
+        item.push_back(wxVariant(layer->getVisible()));
         list_box->PrependItem(item);
         list_box->SelectRow(0);
         sendLayerChangeEvent();

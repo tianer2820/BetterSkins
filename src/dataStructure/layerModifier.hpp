@@ -42,13 +42,13 @@ public:
     virtual LayerModifier *copy() = 0;
     string name = "Modifier Base";
 
-    void setVisable(bool visable = true)
+    void setVisible(bool visible = true)
     {
-        this->visable = visable;
+        this->visible = visible;
     }
-    bool getVisable()
+    bool getVisible()
     {
-        return visable;
+        return visible;
     }
     /**
      * you need to override this method to create your controls on the panel.
@@ -56,7 +56,7 @@ public:
     virtual void makeUI(wxWindow *panel) = 0;
 
 protected:
-    bool visable = true;
+    bool visible = true;
     /**
      * you should send this event using a ctrl on your panel
      */

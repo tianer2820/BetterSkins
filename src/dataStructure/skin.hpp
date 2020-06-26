@@ -100,7 +100,7 @@ public:
         for (auto i = layers.begin(); i != layers.end(); i++)
         {
             Layer *layer = *i;
-            if(!layer->getVisable()){
+            if(!layer->getVisible()){
                 continue;
             }
             wxImage layer_render = layer->render();

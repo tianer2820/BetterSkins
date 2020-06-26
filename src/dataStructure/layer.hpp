@@ -214,7 +214,7 @@ public:
         for (auto i = modifier_list.begin(); i != modifier_list.end(); i++)
         {
             LayerModifier *modifier = *i;
-            if(!modifier->getVisable()){
+            if(!modifier->getVisible()){
                 continue;
             }
             modifier->render(raw);
@@ -248,15 +248,15 @@ public:
         modifier_list.insert(modifier_list.begin() + to, modifier);
     }
 
-    void setVisable(bool visable = true){
-        this->visable = visable;
+    void setVisible(bool visible = true){
+        this->visible = visible;
     }
-    bool getVisable(){
-        return visable;
+    bool getVisible(){
+        return visible;
     }
 protected:
     string name;
-    bool visable = true;
+    bool visible = true;
     wxImage paint_img;
     wxImage stroke_img;
     set<wxPoint> stroke_set;

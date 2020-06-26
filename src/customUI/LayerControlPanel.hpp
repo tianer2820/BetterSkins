@@ -126,7 +126,7 @@ protected:
         box->Add(visable_box, 0, wxALL | wxEXPAND, 2);
         box->Add(control_panel, 1, wxALL | wxEXPAND, 2);
         panel->SetSizer(box);
-        visable_box->SetValue(modifier->getVisable());
+        visable_box->SetValue(modifier->getVisible());
         panel->Bind(wxEVT_CHECKBOX, &LayerControlPanel::onToggleVisable, this, visable_box->GetId());
 
         list_book->AddPage(panel, wxString::FromUTF8(modifier->getName()));
@@ -152,7 +152,7 @@ protected:
             return;
         }
         bool value = box->GetValue();
-        modifier->setVisable(value);
+        modifier->setVisible(value);
         sendUpdateEvent();
     }
     void onRename(wxCommandEvent &event)

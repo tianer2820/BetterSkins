@@ -491,6 +491,8 @@ public:
         makeMenu();
         wxInitAllImageHandlers();
 
+        this->SetSize(1000, 600);
+
         mainP = new wxPanel(this);
         wxSplitterWindow *splitter = new wxSplitterWindow(mainP);
         viewer = new LayerViewer(splitter);
@@ -498,7 +500,7 @@ public:
 
         lcp = new LayerControlPanel(splitter);
         Bind(EVT_LAYER_RENAME, &MyFrame::onLayerRename, this, lcp->GetId());
-        splitter->SplitHorizontally(viewer, lcp, viewer->GetBestHeight(100));
+        splitter->SplitHorizontally(viewer, lcp, GetSize().GetHeight() / 2);
         splitter->SetWindowStyle(wxSP_LIVE_UPDATE | wxSP_3D | wxSP_NO_XP_THEME);
 
         myskin = new Skin("my skin");
@@ -527,7 +529,6 @@ public:
         Bind(EVT_LAYER_UPDATE, &MyFrame::onNeedRefresh, this);
 
         mainP->SetSizer(box);
-        this->SetSize(1000, 600);
     }
     ~MyFrame()
     {

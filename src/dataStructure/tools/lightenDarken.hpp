@@ -30,6 +30,7 @@ public:
         this->y = y;
         if (is_down && current_layer != NULL)
         {
+            //paint
             int size = getProperty("SIZE");
             int lightness = getProperty("LIGHTNESS");
             int incremental = getProperty("INCREMENTAL");
@@ -81,6 +82,7 @@ public:
         {
             current_layer->stroke();
         }
+        is_down = false;
     }
     virtual void setFunctionalKeys(bool shift, bool ctrl)
     {

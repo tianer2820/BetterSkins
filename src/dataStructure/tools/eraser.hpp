@@ -51,6 +51,7 @@ public:
         {
             current_layer->stroke();
         }
+        is_down = false;
     }
     virtual void setFunctionalKeys(bool shift, bool ctrl)
     {

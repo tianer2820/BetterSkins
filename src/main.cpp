@@ -542,29 +542,29 @@ public:
 
         this->SetSize(1000, 600);
 
-        mainP = new wxPanel(this);
-        wxSplitterWindow *splitter = new wxSplitterWindow(mainP);
-        viewer = new LayerViewer(splitter);
-        Bind(EVT_LAYER_CHANGE, &MyFrame::onLayerChange, this, viewer->GetId());
+        main_panel = new wxPanel(this);
+        wxSplitterWindow *splitter = new wxSplitterWindow(main_panel);
+        layer_viewer = new LayerViewer(splitter);
+        Bind(EVT_LAYER_CHANGE, &MyFrame::onLayerChange, this, layer_viewer->GetId());
 
-        lcp = new LayerControlPanel(splitter);
-        Bind(EVT_LAYER_RENAME, &MyFrame::onLayerRename, this, lcp->GetId());
-        splitter->SplitHorizontally(viewer, lcp, GetSize().GetHeight() / 2);
+        layer_control_panel = new LayerControlPanel(splitter);
+        Bind(EVT_LAYER_RENAME, &MyFrame::onLayerRename, this, layer_control_panel->GetId());
+        splitter->SplitHorizontally(layer_viewer, layer_control_panel, GetSize().GetHeight() / 2);
         splitter->SetWindowStyle(wxSP_LIVE_UPDATE | wxSP_3D | wxSP_NO_XP_THEME);
 
-        myskin = new Skin("my skin");
-        myskin->addLayer(new Layer("Test Layer", myskin->getLayerSize()));
-        viewer->loadSkin(myskin);
+        current_skin = new Skin("my skin");
+        current_skin->addLayer(new Layer("Test Layer", current_skin->getLayerSize()));
+        layer_viewer->loadSkin(current_skin);
 
         wxBoxSizer *box = new wxBoxSizer(wxHORIZONTAL);
-        color_picker = new AdvColorPicker(mainP);
+        color_picker = new AdvColorPicker(main_panel);
         box->Add(color_picker, 1, wxEXPAND | wxALL, 5);
         Bind(EVT_COLOR_PICKER_CHANGE, &MyFrame::onColorChange, this, color_picker->GetId());
 
-        wxSplitterWindow *middle_splitter = new wxSplitterWindow(mainP);
+        wxSplitterWindow *middle_splitter = new wxSplitterWindow(main_panel);
 
         canvas = new Canvas(middle_splitter);
-        canvas->loadSkin(myskin);
+        canvas->loadSkin(current_skin);
         Bind(EVT_COLOR_PICKER_CHANGE, &MyFrame::onColorChange, this, canvas->GetId());
 
         tool_box = new ToolBox(middle_splitter);
@@ -578,11 +578,11 @@ public:
 
         Bind(EVT_LAYER_UPDATE, &MyFrame::onNeedRefresh, this);
 
-        mainP->SetSizer(box);
+        main_panel->SetSizer(box);
     }
     ~MyFrame()
     {
-        delete myskin;
+        delete current_skin;
         CommandManager::destruct();
     }
 
@@ -621,32 +621,32 @@ public:
         Bind(wxEVT_MENU, &MyFrame::onOpenReference, this, item->GetId());
     }
 
-    wxPanel *mainP;
-    LayerViewer *viewer;
-    LayerControlPanel *lcp;
+    wxPanel *main_panel;
+    LayerViewer *layer_viewer;
+    LayerControlPanel *layer_control_panel;
     ToolBox *tool_box;
     Canvas *canvas;
     AdvColorPicker *color_picker;
 
 protected:
-    Skin *myskin = nullptr;
+    Skin *current_skin = nullptr;
     void onToolChange(wxCommandEvent &event)
     {
         canvas->setPen(tool_box->getTool());
     }
     void onLayerRename(wxCommandEvent &event)
     {
-        viewer->refreshNames();
+        layer_viewer->refreshNames();
     }
     void onLayerChange(wxCommandEvent &event)
     {
-        if (myskin->getLayerNum() != 0 && event.GetInt() != -1)
+        if (current_skin->getLayerNum() != 0 && event.GetInt() != -1)
         {
-            lcp->loadLayer(myskin->getLayer(event.GetInt()));
+            layer_control_panel->loadLayer(current_skin->getLayer(event.GetInt()));
         }
         else
         {
-            lcp->clear();
+            layer_control_panel->clear();
         }
         canvas->loadLayer(event.GetInt());
     }
@@ -672,7 +672,7 @@ protected:
 
     void onNewSkin(wxCommandEvent &event)
     {
-        if (myskin != nullptr)
+        if (current_skin != nullptr)
         {
             // some thing is opened
             int ret = wxMessageBox(_T("Save current skin?"), _T("Unsaved skin"), wxYES_NO | wxCANCEL);
@@ -690,13 +690,13 @@ protected:
             else
             {
                 // don't save
-                delete myskin;
-                myskin = nullptr;
+                delete current_skin;
+                current_skin = nullptr;
             }
             canvas->loadSkin(nullptr);
             canvas->loadLayer(-1);
-            viewer->clear();
-            lcp->clear();
+            layer_viewer->clear();
+            layer_control_panel->clear();
         }
         // create new skin
         wxArrayString choices;
@@ -709,22 +709,22 @@ protected:
         switch (answer)
         {
         case 0:
-            myskin = new Skin("new skin", SkinType::STEVE);
+            current_skin = new Skin("new skin", SkinType::STEVE);
             break;
         case 1:
-            myskin = new Skin("new skin", SkinType::ALEX);
+            current_skin = new Skin("new skin", SkinType::ALEX);
             break;
         case 2:
-            myskin = new Skin("new skin", SkinType::STEVE_MIN);
+            current_skin = new Skin("new skin", SkinType::STEVE_MIN);
             break;
         case 3:
-            myskin = new Skin("new skin", SkinType::ALEX_MIN);
+            current_skin = new Skin("new skin", SkinType::ALEX_MIN);
             break;
         default:
             break;
         }
-        canvas->loadSkin(myskin);
-        viewer->loadSkin(myskin);
+        canvas->loadSkin(current_skin);
+        layer_viewer->loadSkin(current_skin);
     }
     void onSave(wxCommandEvent &event)
     {
@@ -738,7 +738,7 @@ protected:
         if (ret == wxID_OK)
         {
             wxString path = export_dialog->GetPath();
-            wxImage image = this->myskin->render();
+            wxImage image = this->current_skin->render();
             image.SaveFile(path, wxBITMAP_TYPE_PNG);
         }
         export_dialog->Destroy();
@@ -753,16 +753,16 @@ protected:
             wxString path = import_dialog->GetPath();
             wxImage image;
             image.LoadFile(path);
-            wxSize skin_size = myskin->getLayerSize();
+            wxSize skin_size = current_skin->getLayerSize();
             image.Rescale(skin_size.x, skin_size.y);
             if (!image.HasAlpha())
             {
                 image.InitAlpha();
             }
-            Layer *new_layer = new Layer("Imported Layer", myskin->getLayerSize());
+            Layer *new_layer = new Layer("Imported Layer", current_skin->getLayerSize());
             new_layer->getImage()->Paste(image, 0, 0);
-            myskin->addLayer(new_layer);
-            viewer->loadSkin(myskin);
+            current_skin->addLayer(new_layer);
+            layer_viewer->loadSkin(current_skin);
         }
 
         import_dialog->Destroy();

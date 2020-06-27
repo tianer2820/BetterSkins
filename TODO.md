@@ -1,6 +1,7 @@
 ## Tools:
 - selection tools
 - move tool
+- color picker
 
 ## canvas:
 - use color inverse for brush square
@@ -18,4 +19,4 @@
 - The layer overlay modifier
 
 ## Others
-The first release has came out, code cleaning is in progress and more new features are comming...
+better color palette, store recent used colors.

@@ -1,7 +1,6 @@
 ## Tools:
 - selection tools
 - move tool
-- color picker
 
 ## canvas:
 - use color inverse for brush square

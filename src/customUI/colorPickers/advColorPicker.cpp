@@ -69,6 +69,11 @@ void AdvColorPicker::setColor(Color &color)
     {
         color_picker_list[i]->setColor(color);
     }
+    int rgb[3];
+    color.getRGB(rgb);
+    color_shower->SetBackgroundColour(wxColor(rgb[0], rgb[1], rgb[2]));
+    color_shower->Refresh();
+    color_shower->Update();
 }
 
 void AdvColorPicker::onColorChange(wxCommandEvent &event)

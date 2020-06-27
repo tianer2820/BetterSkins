@@ -16,6 +16,8 @@
 ## Modifier
 - better modifier viewer
 - The layer overlay modifier
+- can apply the modifier
 
 ## Others
 better color palette, store recent used colors.
+fix bug when the "undo" layer is deleted

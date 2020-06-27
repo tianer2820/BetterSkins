@@ -611,6 +611,7 @@ public:
         item = menu_file->Append(wxID_ANY, _T("Export"), _T("export to a png file"));
         Bind(wxEVT_MENU, &MyFrame::onExport, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Close"), _T("close the current file"));
+        Bind(wxEVT_MENU, &MyFrame::onClose, this, item->GetId());
 
         item = menu_edit->Append(wxID_ANY, _T("Redo\tCtrl+Shift+Z"), _T("redo last operation"));
         Bind(wxEVT_MENU, &MyFrame::onRedo, this, item->GetId());
@@ -672,31 +673,9 @@ protected:
 
     void onNewSkin(wxCommandEvent &event)
     {
-        if (current_skin != nullptr)
-        {
-            // some thing is opened
-            int ret = wxMessageBox(_T("Save current skin?"), _T("Unsaved skin"), wxYES_NO | wxCANCEL);
-            if (ret == wxYES)
-            {
-                // save
-                wxMessageBox(_T("Sorry! Saving is not supported yet.."));
-                return;
-            }
-            else if (ret == wxCANCEL)
-            {
-                // canceled
-                return;
-            }
-            else
-            {
-                // don't save
-                delete current_skin;
-                current_skin = nullptr;
-            }
-            canvas->loadSkin(nullptr);
-            canvas->loadLayer(-1);
-            layer_viewer->clear();
-            layer_control_panel->clear();
+        bool success = tryCloseCurrentSkin();
+        if(!success){
+            return;
         }
         // create new skin
         wxArrayString choices;
@@ -768,6 +747,42 @@ protected:
         import_dialog->Destroy();
         canvas->redraw();
         canvas->Update();
+    }
+    void onClose(wxCommandEvent &event){
+        tryCloseCurrentSkin();
+    }
+    
+    /**
+     * ask user to save the document.
+     * if user canceled, return false
+     */
+    bool tryCloseCurrentSkin(){
+        if (current_skin != nullptr)
+        {
+            // some thing is opened
+            int ret = wxMessageBox(_T("Save current skin?"), _T("Unsaved skin"), wxYES_NO | wxCANCEL);
+            if (ret == wxYES)
+            {
+                // save
+                wxMessageBox(_T("Sorry! Saving is not supported yet.."));
+            }
+            else if (ret == wxCANCEL)
+            {
+                // canceled
+                return false;
+            }
+            else
+            {
+                // don't save
+                delete current_skin;
+                current_skin = nullptr;
+            }
+            canvas->loadSkin(current_skin);
+            canvas->loadLayer(-1);
+            layer_viewer->clear();
+            layer_viewer->setActiveLayer();
+            layer_control_panel->clear();
+        }
     }
 
     void onUndo(wxCommandEvent &event)

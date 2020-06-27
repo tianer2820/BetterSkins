@@ -11,6 +11,7 @@
 enum class ToolType
 {
     PEN,
+    COLORPEN,
     DROPPER,
     SELECT,
     MOVE

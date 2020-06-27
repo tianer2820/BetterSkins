@@ -19,7 +19,7 @@ public:
         setProperty("b", 0);
         setProperty("a", 255);
         setProperty("SIZE", 1);
-        tool_type = ToolType::PEN;
+        tool_type = ToolType::COLORPEN;
     }
     virtual void moveTo(int x, int y)
     {

@@ -11,6 +11,7 @@
 #include "../dataStructure/tools/noisePen.hpp"
 #include "../dataStructure/tools/eraser.hpp"
 #include "../dataStructure/tools/lightenDarken.hpp"
+#include "../dataStructure/tools/dropper.hpp"
 
 wxDECLARE_EVENT(EVT_BUTTON_LIST_CHANGED, wxCommandEvent);
 wxDEFINE_EVENT(EVT_BUTTON_LIST_CHANGED, wxCommandEvent);
@@ -218,6 +219,17 @@ public:
 
         panel->SetSizer(grid);
         option_book->AddPage(panel, _T("Lightness"));
+        button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button_list->addButton(button);
+
+        // dropper
+        tool_list.push_back(new Dropper());
+        icon.LoadFile(icon_path + _T("dropper.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        panel = new wxScrolledWindow(option_book);
+        panel->SetScrollRate(0, 5);
+
+        option_book->AddPage(panel, _T("Dropper"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
         button_list->addButton(button);
 

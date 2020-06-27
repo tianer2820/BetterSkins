@@ -50,7 +50,7 @@ wxDEFINE_EVENT(EVT_CANVAS_PAINT, wxCommandEvent);
  * different tool type: pen, color picker, selection, move
  * emmit new event: color picked
  */
-class Canvas : public wxWindow
+class Canvas : public wxWindow, public ColorPicker
 {
 public:
     Canvas(wxWindow *parent, wxWindowID id = wxID_ANY) : wxWindow(parent, id)
@@ -159,9 +159,21 @@ public:
     /**
      * call this to refresh the skin render. This is used by the layer modifier events.
      */
-    void redraw(){
+    void redraw()
+    {
         need_redraw_skin = true;
         Refresh();
+    }
+
+    // color picker stuff
+
+    virtual Color *getColor()
+    {
+        return current_color.copy();
+    }
+    virtual void setColor(Color &color)
+    {
+        return;
     }
 
 protected:
@@ -186,6 +198,9 @@ protected:
     wxImage bg_checker;
     wxImage skin_render;
     wxImage block_render;
+
+    // color picker
+    RGBColor current_color;
 
     void screenToImage(int x, int y, double &out_x, double &out_y)
     {
@@ -236,7 +251,16 @@ protected:
                     screenToImage(x, y, x1, y1);
                     current_pen->moveTo(x1, y1);
                     current_pen->penDown();
-                    sendStartPaintEvent();
+                    // if the pen is "colored", send event to store the current color
+                    if (current_pen->getToolType() == ToolType::COLORPEN)
+                    {
+                        sendStartPaintEvent();
+                    }
+                    // color picker
+                    if (current_pen->getToolType() == ToolType::DROPPER)
+                    {
+                        pickColor(x1, y1);
+                    }
                 }
             }
             if (is_drawing)
@@ -411,23 +435,21 @@ protected:
                     mgc->SetPen(wxPen(wxColour(0, 0, 0), 1));
                     mgc->SetFont(*wxNORMAL_FONT, wxColour(0, 0, 0));
                     mgc->DrawRectangle(block_screen_x + 1,
-                                      block_screen_y + 1,
-                                      block.width * scale,
-                                      block.height * scale);
+                                       block_screen_y + 1,
+                                       block.width * scale,
+                                       block.height * scale);
                     mgc->DrawText(wxString(block.name), block_screen_x + 1,
-                                 block_screen_y + 1);
+                                  block_screen_y + 1);
 
                     // now draw the white line
                     mgc->SetPen(wxPen(wxColour(255, 255, 255), 1));
                     mgc->SetFont(*wxNORMAL_FONT, wxColour(255, 255, 255));
                     mgc->DrawRectangle(block_screen_x,
-                                      block_screen_y,
-                                      block.width * scale,
-                                      block.height * scale);
+                                       block_screen_y,
+                                       block.width * scale,
+                                       block.height * scale);
                     mgc->DrawText(wxString(block.name), block_screen_x,
-                                 block_screen_y);
-                    
-                    
+                                  block_screen_y);
                 }
                 delete mgc;
                 need_redraw_block = false;
@@ -437,7 +459,15 @@ protected:
         // render brush square
         if (current_pen != nullptr)
         {
-            int size = current_pen->getProperty("SIZE");
+            int size;
+            if (current_pen->getToolType() == ToolType::DROPPER)
+            {
+                size = 1;
+            }
+            else
+            {
+                size = current_pen->getProperty("SIZE");
+            }
             if (size > 0)
             {
                 int mouse_img_x, mouse_img_y;
@@ -479,8 +509,27 @@ protected:
         event->SetEventObject(this);
         wxQueueEvent(GetEventHandler(), event);
     }
-};
+    void pickColor(int x, int y)
+    {
+        if (current_layer != nullptr)
+        {
+            wxImage img = current_layer->render();
+            int color[3];
+            color[0] = img.GetRed(x, y);
+            color[1] = img.GetGreen(x, y);
+            color[2] = img.GetBlue(x, y);
 
+            current_color = RGBColor(color, img.GetAlpha(x, y));
+            sendColorChangeEvent();
+        }
+    }
+    void sendColorChangeEvent()
+    {
+        wxCommandEvent *event = new wxCommandEvent(EVT_COLOR_PICKER_CHANGE, GetId());
+        event->SetEventObject(this);
+        wxQueueEvent(GetEventHandler(), event);
+    }
+};
 
 class MyFrame : public wxFrame
 {
@@ -516,6 +565,7 @@ public:
 
         canvas = new Canvas(middle_splitter);
         canvas->loadSkin(myskin);
+        Bind(EVT_COLOR_PICKER_CHANGE, &MyFrame::onColorChange, this, canvas->GetId());
 
         tool_box = new ToolBox(middle_splitter);
         Bind(EVT_TOOL_CHANGE, &MyFrame::onToolChange, this, tool_box->GetId());

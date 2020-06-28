@@ -8,6 +8,7 @@
 #include "layerModifier.hpp"
 #include "command.hpp"
 #include "commandManager.hpp"
+#include "layerIdManager.hpp"
 
 #include "../imageOperations.hpp"
 
@@ -50,6 +51,8 @@ public:
         stroke_img = wxImage(size);
         stroke_img.InitAlpha();
         clearAlpha(stroke_img);
+
+        id = LayerIdManager::getInstance()->getId();
     }
     Layer(const Layer &copy)
     {
@@ -64,6 +67,7 @@ public:
             *i = (*c)->copy();
             c++;
         }
+        id = LayerIdManager::getInstance()->getId();
     }
     ~Layer()
     {
@@ -71,6 +75,7 @@ public:
         {
             delete *i; // delete all modifier objects
         }
+        LayerIdManager::getInstance()->deleteId(id);
     }
     string getName()
     {
@@ -154,7 +159,7 @@ public:
         // create command
         vector<wxPoint> vec;
         vec.assign(stroke_set.begin(), stroke_set.end());
-        Command *command = new PaintCommand(getImage(), vec, color_list);
+        Command *command = new PaintCommand(id, getImage(), vec, color_list);
         CommandManager::getInstance()->add(command);
         // empty stroke list
         stroke_set.clear();
@@ -261,6 +266,7 @@ protected:
     wxImage stroke_img;
     set<wxPoint> stroke_set;
     vector<LayerModifier *> modifier_list;
+    u_int id;
 
 };
 

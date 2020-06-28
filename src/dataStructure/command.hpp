@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include "layerIdManager.hpp"
 
 using namespace std;
 
@@ -23,6 +24,10 @@ public:
     }
     virtual ~Command(){
     }
+    /**
+     * override this to auto delete commands that are no longer usable.
+     */
+    virtual bool isValid() = 0;
 
 protected:
     bool is_done = true;
@@ -36,8 +41,9 @@ public:
     * this class will delete the color objects automatically
     * the length of the two list should be the same
     */
-    PaintCommand(wxImage *img, vector<wxPoint> point_list, vector<Color *> color_list)
+    PaintCommand(u_int id, wxImage *img, vector<wxPoint> point_list, vector<Color *> color_list)
     {
+        layer_id = id;
         image = img;
         this->point_list = point_list;
         this->color_list = color_list;
@@ -68,8 +74,12 @@ public:
         flipPixels();
         is_done = true;
     }
+    virtual bool isValid(){
+        return LayerIdManager::getInstance()->isIdAlive(layer_id);
+    }
 
 protected:
+    u_int layer_id;
     wxImage *image;
     vector<wxPoint> point_list;
     vector<Color *> color_list;

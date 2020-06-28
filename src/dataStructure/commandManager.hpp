@@ -62,6 +62,15 @@ public:
             return false;
         }
         next_command--;
+        while (checkValidCommand() == false)
+        {
+            if (next_command == command_list.begin())
+            {
+                // no command to undo
+                return false;
+            }
+            next_command--;
+        }
         (*next_command)->undo();
         return true;
     }
@@ -70,6 +79,9 @@ public:
         if (next_command == command_list.end())
         {
             //no command to redo
+            return false;
+        }
+        if(checkValidCommand() == false){
             return false;
         }
         (*next_command)->redo();
@@ -84,6 +96,24 @@ protected:
 
     list<Command *> command_list;
     list<Command *>::iterator next_command;
+
+    /**
+     * return true if the command is valid, false if the command is not.
+     * this will auto delete all command after the invalid command.
+     */
+    bool checkValidCommand()
+    {
+        if ((*next_command)->isValid())
+        {
+            return true;
+        }
+        while (next_command != command_list.end())
+        {
+            delete *next_command;
+            next_command = command_list.erase(next_command);
+        }
+        return false;
+    }
 
     CommandManager()
     {

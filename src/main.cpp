@@ -27,6 +27,7 @@ using json = nlohmann::json;
 #include "dataStructure/skin.hpp"
 #include "dataStructure/SkinFormat.hpp"
 #include "dataStructure/commandManager.hpp"
+#include "dataStructure/layerIdManager.hpp"
 
 #include "dataStructure/tools/Tool.hpp"
 
@@ -537,6 +538,7 @@ public:
     MyFrame() : wxFrame(NULL, wxID_ANY, "Hello World")
     {
         CommandManager::create();
+        LayerIdManager::create();
         makeMenu();
         wxInitAllImageHandlers();
 
@@ -584,6 +586,7 @@ public:
     {
         delete current_skin;
         CommandManager::destruct();
+        LayerIdManager::destroy();
     }
 
     void makeMenu()

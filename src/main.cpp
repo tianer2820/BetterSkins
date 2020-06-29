@@ -547,18 +547,6 @@ public:
         this->SetSize(1000, 600);
 
         main_panel = new wxPanel(this);
-        wxSplitterWindow *splitter = new wxSplitterWindow(main_panel);
-        layer_viewer = new LayerViewer(splitter);
-        Bind(EVT_LAYER_CHANGE, &MyFrame::onLayerChange, this, layer_viewer->GetId());
-
-        layer_control_panel = new LayerControlPanel(splitter);
-        Bind(EVT_LAYER_RENAME, &MyFrame::onLayerRename, this, layer_control_panel->GetId());
-        splitter->SplitHorizontally(layer_viewer, layer_control_panel, GetSize().GetHeight() / 2);
-        splitter->SetWindowStyle(wxSP_LIVE_UPDATE | wxSP_3D | wxSP_NO_XP_THEME);
-
-        current_skin = new Skin("my skin");
-        current_skin->addLayer(new Layer("Test Layer", current_skin->getLayerSize()));
-        layer_viewer->loadSkin(current_skin);
 
         wxBoxSizer *box = new wxBoxSizer(wxHORIZONTAL);
         color_picker = new AdvColorPicker(main_panel);
@@ -578,6 +566,16 @@ public:
         middle_splitter->SplitHorizontally(tool_box, canvas, 40);
 
         box->Add(middle_splitter, 2, wxEXPAND | wxALL, 5);
+
+        wxSplitterWindow *splitter = new wxSplitterWindow(main_panel);
+        layer_viewer = new LayerViewer(splitter);
+        Bind(EVT_LAYER_CHANGE, &MyFrame::onLayerChange, this, layer_viewer->GetId());
+
+        layer_control_panel = new LayerControlPanel(splitter);
+        Bind(EVT_LAYER_RENAME, &MyFrame::onLayerRename, this, layer_control_panel->GetId());
+        splitter->SplitHorizontally(layer_viewer, layer_control_panel, GetSize().GetHeight() / 2);
+        splitter->SetWindowStyle(wxSP_LIVE_UPDATE | wxSP_3D | wxSP_NO_XP_THEME);
+
         box->Add(splitter, 1, wxEXPAND | wxALL, 5);
 
         Bind(EVT_LAYER_UPDATE, &MyFrame::onNeedRefresh, this);
@@ -711,8 +709,10 @@ protected:
         default:
             break;
         }
+        current_skin->addLayer(new Layer("Layer", current_skin->getLayerSize()));
         canvas->loadSkin(current_skin);
         layer_viewer->loadSkin(current_skin);
+        layer_viewer->setActiveLayer();
     }
     /**
      * return false only when user canceled

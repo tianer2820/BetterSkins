@@ -50,6 +50,13 @@ public:
         button->SetMinSize(wxSize(20, 20));
         button_list.push_back(button);
         grid->Add(button, 0, wxALL, 1);
+
+        // set default selection
+        if(button_list.size() == 1){
+            button_list.at(0)->SetValue(true);
+            selection = 0;
+            sendButtonListChangedEvent();
+        }
     }
     int getSelection()
     {

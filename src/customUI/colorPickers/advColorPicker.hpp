@@ -29,7 +29,9 @@ protected:
     const static int num_pickers = 5;
     ColorPicker *color_picker_list[num_pickers];
     ColorShower *color_shower;
+    wxSlider* alpha_slider;
     void onColorChange(wxCommandEvent &event);
+    void onAlphaChange(wxCommandEvent &event);
     void sendColorChangeEvent();
     virtual wxSize DoGetBestSize() const override;
 };

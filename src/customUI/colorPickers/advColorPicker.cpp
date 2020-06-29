@@ -38,6 +38,12 @@ AdvColorPicker::AdvColorPicker(wxWindow *parent, wxWindowID id) : wxPanel(parent
 
     color_shower = new ColorShower(this);
     box->Add(color_shower, 0, wxEXPAND | wxALL, 5);
+    alpha_slider = new wxSlider(this, wxID_ANY, 255, 0, 255,
+                                wxDefaultPosition,
+                                wxDefaultSize,
+                                wxSL_HORIZONTAL | wxSL_VALUE_LABEL);
+    box->Add(alpha_slider, 0, wxEXPAND | wxALL, 5);
+    Bind(wxEVT_SLIDER, &AdvColorPicker::onAlphaChange, this, alpha_slider->GetId());
 
     wxNotebook *lower_book = new wxNotebook(this, wxID_ANY);
 
@@ -61,7 +67,9 @@ AdvColorPicker::AdvColorPicker(wxWindow *parent, wxWindowID id) : wxPanel(parent
 // you have to delete the returned object manually!
 Color *AdvColorPicker::getColor()
 {
-    return color_picker_list[1]->getColor(); // use RGB for speed
+    Color* color = color_picker_list[1]->getColor(); // use RGB for speed
+    color->setAlpha(alpha_slider->GetValue());
+    return color;
 }
 void AdvColorPicker::setColor(Color &color)
 {
@@ -101,6 +109,16 @@ void AdvColorPicker::onColorChange(wxCommandEvent &event)
         color_picker_list[i]->setColor(*new_color);
     }
     int rgb[3];
+    new_color->getRGB(rgb);
+    color_shower->setColor(rgb, alpha_slider->GetValue());
+    color_shower->Update();
+    delete new_color;
+    sendColorChangeEvent();
+}
+
+void AdvColorPicker::onAlphaChange(wxCommandEvent &event){
+    int rgb[3];
+    Color* new_color = this->getColor();
     new_color->getRGB(rgb);
     color_shower->setColor(rgb, new_color->getAlpha());
     color_shower->Update();

@@ -80,6 +80,7 @@ void AdvColorPicker::setColor(Color &color)
     int rgb[3];
     color.getRGB(rgb);
     color_shower->setColor(rgb, color.getAlpha());
+    alpha_slider->SetValue(color.getAlpha());
     color_shower->Update();
 }
 

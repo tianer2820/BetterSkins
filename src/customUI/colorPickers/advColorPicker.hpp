@@ -15,6 +15,7 @@
 #include "rgbPanel.h"
 #include "hsvPanel.h"
 #include "hexPanel.hpp"
+#include "colorShower.hpp"
 using namespace std;
 
 
@@ -27,7 +28,7 @@ public:
 protected:
     const static int num_pickers = 5;
     ColorPicker *color_picker_list[num_pickers];
-    wxPanel *color_shower;
+    ColorShower *color_shower;
     void onColorChange(wxCommandEvent &event);
     void sendColorChangeEvent();
     virtual wxSize DoGetBestSize() const override;

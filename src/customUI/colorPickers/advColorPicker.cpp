@@ -13,6 +13,8 @@
 #include "rgbPanel.h"
 #include "hsvPanel.h"
 #include "hexPanel.hpp"
+#include "colorShower.hpp"
+
 #include "advColorPicker.hpp"
 using namespace std;
 
@@ -34,9 +36,7 @@ AdvColorPicker::AdvColorPicker(wxWindow *parent, wxWindowID id) : wxPanel(parent
 
     box->Add(upper_book, 1, wxEXPAND | wxALL, 5);
 
-    color_shower = new wxPanel(this);
-    color_shower->SetMinSize(wxSize(20, 20));
-    color_shower->SetBackgroundColour(wxColor(0, 0, 0));
+    color_shower = new ColorShower(this);
     box->Add(color_shower, 0, wxEXPAND | wxALL, 5);
 
     wxNotebook *lower_book = new wxNotebook(this, wxID_ANY);
@@ -71,8 +71,7 @@ void AdvColorPicker::setColor(Color &color)
     }
     int rgb[3];
     color.getRGB(rgb);
-    color_shower->SetBackgroundColour(wxColor(rgb[0], rgb[1], rgb[2]));
-    color_shower->Refresh();
+    color_shower->setColor(rgb, color.getAlpha());
     color_shower->Update();
 }
 
@@ -103,8 +102,7 @@ void AdvColorPicker::onColorChange(wxCommandEvent &event)
     }
     int rgb[3];
     new_color->getRGB(rgb);
-    color_shower->SetBackgroundColour(wxColor(rgb[0], rgb[1], rgb[2]));
-    color_shower->Refresh();
+    color_shower->setColor(rgb, new_color->getAlpha());
     color_shower->Update();
     delete new_color;
     sendColorChangeEvent();

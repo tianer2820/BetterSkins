@@ -9,6 +9,8 @@
 
 #include <wx/valnum.h>
 #include <string>
+#include <json.hpp>
+using json = nlohmann::json;
 #include "../customUI/layerModifierUIs/colorRampCtrl.hpp"
 
 using namespace std;
@@ -54,9 +56,19 @@ public:
      * you need to override this method to create your controls on the panel.
      */
     virtual void makeUI(wxWindow *panel) = 0;
+    virtual json toJson() = 0;
+    virtual bool loadJson(json j) = 0;
+    bool isModified(){
+        return modified;
+    }
+    void setModified(bool v){
+        modified = v;
+    }
 
 protected:
     bool visible = true;
+    bool modified = true;
+
     /**
      * you should send this event using a ctrl on your panel
      */
@@ -92,6 +104,19 @@ public:
             }
         }
     }
+
+    virtual json toJson()
+    {
+        json j;
+        j["modifier_name"] = name;
+        return j;
+    }
+    virtual bool loadJson(json j)
+    {
+        modified = false;
+        return true;
+    }
+
     virtual LayerGrayModifier *copy()
     {
         return new LayerGrayModifier(*this);
@@ -148,6 +173,27 @@ public:
         panel->Bind(wxEVT_TEXT, &LayerAlphaBlendModifier::onEntryChange, this, entry->GetId());
     }
 
+    virtual json toJson()
+    {
+        json j;
+        j["modifier_name"] = name;
+        j["alpha"] = alpha_blend;
+        return j;
+    }
+    virtual bool loadJson(json j)
+    {
+        if (j.contains("alpha") && j["alpha"].is_number_integer())
+        {
+            alpha_blend = j["alpha"];
+        }
+        else
+        {
+            return false;
+        }
+        modified = false;
+        return true;
+    }
+
 protected:
     int alpha_blend = 255;
     wxSlider *alpha_slider;
@@ -162,6 +208,7 @@ protected:
 
         entry->ChangeValue(to_string(alpha_slider->GetValue()));
         alpha_blend = alpha_slider->GetValue();
+        modified = true;
     }
     void onEntryChange(wxCommandEvent &event)
     {
@@ -172,6 +219,7 @@ protected:
 
         alpha_slider->SetValue(stoi(entry->GetValue().ToStdString()));
         alpha_blend = stoi(entry->GetValue().ToStdString());
+        modified = true;
     }
 };
 
@@ -214,10 +262,13 @@ public:
     virtual void makeUI(wxWindow *panel)
     {
         ramp = new ColorRampBar(panel);
-        if(is_init){
+        if (is_init)
+        {
             doUpdate();
             is_init = false;
-        } else{
+        }
+        else
+        {
             ramp->init(color_list, position_list);
         }
 
@@ -242,6 +293,68 @@ public:
         panel->SetSizer(box);
     }
 
+    virtual json toJson()
+    {
+        json j;
+        j["modifier_name"] = name;
+        j["color_list"] = json::array();
+        j["position_list"] = json::array();
+        int len = color_list.size();
+        for (int i = 0; i < len; i++)
+        {
+            RGBColor color = color_list.at(i);
+            int pos = position_list.at(i);
+            int rgb[3];
+            color.getRGB(rgb);
+            json json_color;
+            for (int c = 0; c < 3; c++)
+            {
+                json_color.push_back(rgb[c]);
+            }
+            j["color_list"].push_back(json_color);
+            j["position_list"].push_back(pos);
+        }
+
+        return j;
+    }
+    virtual bool loadJson(json j)
+    {
+        if (!j.is_object())
+        {
+            return false;
+        }
+
+        if (j.contains("modifier_name"))
+        {
+            name = j["modifier_name"].get<string>();
+        }
+        else
+        {
+            return false;
+        }
+
+        if (j.contains("color_list") && j.contains("position_list"))
+        {
+            json colors = j["color_list"];
+            json positions = j["position_list"];
+            int size = colors.size();
+            for (int i = 0; i < size; i++)
+            {
+                json c = colors[i];
+                int pos = positions[i];
+                position_list.push_back(pos);
+                color_list.push_back(RGBColor(c[0], c[1], c[2]));
+            }
+        }
+        else
+        {
+            return false;
+        }
+        is_init = false;
+        modified = false;
+        return true;
+    }
+
 private:
     ColorRampBar *ramp = nullptr;
     vector<RGBColor> color_list;
@@ -249,8 +362,9 @@ private:
 
     bool is_init = true;
 
-    void doUpdate(){
-        wxCommandEvent* event = createLayerUpdateEvent();
+    void doUpdate()
+    {
+        wxCommandEvent *event = createLayerUpdateEvent();
         event->SetId(ramp->GetId());
         event->SetEventObject(ramp);
         wxQueueEvent(ramp->GetEventHandler(), event);
@@ -262,16 +376,19 @@ private:
     void onRampChanged(wxCommandEvent &event)
     {
         doUpdate();
+        modified = true;
     }
     void onAdd(wxCommandEvent &event)
     {
         ramp->add();
         doUpdate();
+        modified = true;
     }
     void onDelete(wxCommandEvent &event)
     {
         ramp->remove();
         doUpdate();
+        modified = true;
     }
 
     RGBColor getColorAt(int pos)

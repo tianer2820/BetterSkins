@@ -9,8 +9,9 @@
 #include <wx/simplebook.h>
 #include <wx/file.h>
 
-#include "json.hpp"
+#include <json.hpp>
 using json = nlohmann::json;
+#include <base64.h>
 
 #include "imageOperations.hpp"
 
@@ -131,7 +132,7 @@ public:
     {
         // this class won't delete the loaded skin. You should save and delete it.
         current_skin = skin;
-        Refresh();
+        redraw();
         Update();
     }
     /**
@@ -163,6 +164,7 @@ public:
     void redraw()
     {
         need_redraw_skin = true;
+        need_redraw_block = true;
         Refresh();
     }
 
@@ -607,6 +609,7 @@ public:
         Bind(wxEVT_MENU, &MyFrame::onNewSkin, this, item->GetId());
 
         item = menu_file->Append(wxID_ANY, _T("Open\tCtrl+O"), _T("open a skin file"));
+        Bind(wxEVT_MENU, &MyFrame::onOpen, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Save\tCtrl+S"), _T("save to a skin file"));
         Bind(wxEVT_MENU, &MyFrame::onSave, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Import"), _T("Import a png file to a layer"));
@@ -634,6 +637,8 @@ public:
 
 protected:
     Skin *current_skin = nullptr;
+    wxString save_dir = wxEmptyString;
+
     void onToolChange(wxCommandEvent &event)
     {
         canvas->setPen(tool_box->getTool());
@@ -677,7 +682,8 @@ protected:
     void onNewSkin(wxCommandEvent &event)
     {
         bool success = tryCloseCurrentSkin();
-        if(!success){
+        if (!success)
+        {
             return;
         }
         // create new skin
@@ -708,9 +714,73 @@ protected:
         canvas->loadSkin(current_skin);
         layer_viewer->loadSkin(current_skin);
     }
+    /**
+     * return false only when user canceled
+     */
+    bool doSave()
+    {
+        if (current_skin == nullptr)
+        {
+            return true;
+        }
+        if (!current_skin->isModified())
+        {
+            return true;
+        }
+        if (save_dir == wxEmptyString)
+        {
+            wxFileDialog *fd = new wxFileDialog(this, _T("Save File..."),
+                                                wxEmptyString, wxEmptyString, _T("JSON File|*.json"), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+            int ret = fd->ShowModal();
+            if (ret != wxID_OK)
+            {
+                return false;
+            }
+            save_dir = fd->GetPath();
+            fd->Destroy();
+        }
+
+        json file = current_skin->toJson();
+        string str = file.dump(2);
+        wxFile f;
+        f.Open(save_dir, wxFile::write);
+        f.Write(str);
+        f.Close();
+        current_skin->setModified(false);
+        return true;
+    }
     void onSave(wxCommandEvent &event)
     {
-        wxMessageBox(_T("Sorry! Saving is not supported yet.."));
+        doSave();
+    }
+    void onOpen(wxCommandEvent &event)
+    {
+        bool success = tryCloseCurrentSkin();
+        if (!success)
+        {
+            return;
+        }
+        wxFileDialog *fd = new wxFileDialog(this, _T("Open File..."),
+                                            wxEmptyString, wxEmptyString, _T("JSON File|*.json"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+        int ret = fd->ShowModal();
+        if (ret != wxID_OK)
+        {
+            return;
+        }
+        current_skin = new Skin("skin", SkinType::STEVE);
+        wxFile f;
+        wxString json_str;
+        save_dir = fd->GetPath();
+        f.Open(save_dir, wxFile::read);
+        f.ReadAll(&json_str);
+        f.Close();
+        string str = json_str.ToStdString();
+        json j = json::parse(str);
+        current_skin->loadJson(j);
+        fd->Destroy();
+        canvas->loadSkin(current_skin);
+        layer_viewer->loadSkin(current_skin);
+        layer_viewer->setActiveLayer();
     }
     void onExport(wxCommandEvent &event)
     {
@@ -751,41 +821,77 @@ protected:
         canvas->redraw();
         canvas->Update();
     }
-    void onClose(wxCommandEvent &event){
+    void onClose(wxCommandEvent &event)
+    {
         tryCloseCurrentSkin();
     }
-    
+
     /**
-     * ask user to save the document.
+     * try to close the current skin, ask to save when needed.
+     * if succeed, set current_skin to null and clear all panels.
      * if user canceled, return false
      */
-    bool tryCloseCurrentSkin(){
+    bool tryCloseCurrentSkin()
+    {
         if (current_skin != nullptr)
         {
+            if (!current_skin->isModified())
+            { // no need for saving
+                delete current_skin;
+                current_skin = nullptr;
+                canvas->loadSkin(current_skin);
+                canvas->loadLayer(-1);
+                layer_viewer->clear();
+                layer_viewer->setActiveLayer();
+                layer_control_panel->clear();
+                save_dir = wxEmptyString;
+                return true;
+            }
+
             // some thing is opened
             int ret = wxMessageBox(_T("Save current skin?"), _T("Unsaved skin"), wxYES_NO | wxCANCEL);
             if (ret == wxYES)
             {
-                // save
-                wxMessageBox(_T("Sorry! Saving is not supported yet.."));
+                // save, return false if canceled.
+                bool success = doSave(); // try to save
+                if (!success)
+                {
+                    return false; // user canceled
+                }
+                else
+                { // skin saved, delete it.
+                    delete current_skin;
+                    current_skin = nullptr;
+                    canvas->loadSkin(current_skin);
+                    canvas->loadLayer(-1);
+                    layer_viewer->clear();
+                    layer_viewer->setActiveLayer();
+                    layer_control_panel->clear();
+                    save_dir = wxEmptyString;
+                    return true;
+                }
             }
             else if (ret == wxCANCEL)
             {
-                // canceled
+                // user canceled
                 return false;
             }
             else
             {
-                // don't save
+                // user chose not to save
                 delete current_skin;
                 current_skin = nullptr;
+                canvas->loadSkin(current_skin);
+                canvas->loadLayer(-1);
+                layer_viewer->clear();
+                layer_viewer->setActiveLayer();
+                layer_control_panel->clear();
+                save_dir = wxEmptyString;
+                return true;
             }
-            canvas->loadSkin(current_skin);
-            canvas->loadLayer(-1);
-            layer_viewer->clear();
-            layer_viewer->setActiveLayer();
-            layer_control_panel->clear();
         }
+        save_dir = wxEmptyString;
+        return true; // no skin opened
     }
 
     void onUndo(wxCommandEvent &event)

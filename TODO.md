@@ -6,7 +6,6 @@
 - use color inverse for brush square
 
 ## file:
-- save and load functions
 - read json when creating new file
 
 ## Layer and image:

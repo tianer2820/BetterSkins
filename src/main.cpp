@@ -471,8 +471,8 @@ protected:
             {
                 size = current_pen->getProperty("SIZE");
             }
-            if (size > 0)
-            {
+            if (size > 0 && current_pen->getToolType() != ToolType::MOVE)
+            { // don't display cursor if is the move tool.
                 int mouse_img_x, mouse_img_y;
                 wxPoint mouse_point = wxGetMousePosition();
                 mouse_point = this->ScreenToClient(mouse_point);

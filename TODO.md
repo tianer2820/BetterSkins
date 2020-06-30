@@ -1,6 +1,7 @@
 ## Tools:
 - selection tools
 - move tool
+- copy and paste tools, drag to select, click to move/paste
 
 ## canvas:
 - use color inverse for brush square

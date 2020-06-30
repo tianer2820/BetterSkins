@@ -12,6 +12,7 @@
 #include "../dataStructure/tools/eraser.hpp"
 #include "../dataStructure/tools/lightenDarken.hpp"
 #include "../dataStructure/tools/dropper.hpp"
+#include "../dataStructure/tools/moveTool.hpp"
 
 wxDECLARE_EVENT(EVT_BUTTON_LIST_CHANGED, wxCommandEvent);
 wxDEFINE_EVENT(EVT_BUTTON_LIST_CHANGED, wxCommandEvent);
@@ -237,6 +238,17 @@ public:
         panel->SetScrollRate(0, 5);
 
         option_book->AddPage(panel, _T("Dropper"));
+        button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button_list->addButton(button);
+
+        // move tool
+        tool_list.push_back(new MoveTool());
+        icon.LoadFile(icon_path + _T("move.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        panel = new wxScrolledWindow(option_book);
+        panel->SetScrollRate(0, 5);
+
+        option_book->AddPage(panel, _T("MoveTool"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
         button_list->addButton(button);
 

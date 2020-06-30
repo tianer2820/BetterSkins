@@ -14,6 +14,7 @@ using json = nlohmann::json;
 #include <base64.h>
 
 #include "imageOperations.hpp"
+#include "miscellaneous.hpp"
 
 #include "customUI/colorPickers/advColorPicker.hpp"
 #include "customUI/skinBrowser.h"
@@ -132,6 +133,7 @@ public:
     {
         // this class won't delete the loaded skin. You should save and delete it.
         current_skin = skin;
+        has_selection = false;
         redraw();
         Update();
     }
@@ -179,6 +181,42 @@ public:
         return;
     }
 
+    // copy paste functions
+    Layer* copySelected(bool cut = false){
+        if(current_layer == nullptr || !has_selection){
+            return nullptr;
+        }
+        Layer* new_layer = new Layer(*current_layer);
+        wxImage* img = new_layer->getImage();
+        int w = img->GetWidth();
+        int h = img->GetHeight();
+        u_char* alpha = img->GetAlpha();
+        wxRect sel = reCalcRect(selection_box);
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                if(sel.Contains(x, y)){
+
+                } else{
+                    alpha[y * w + x] = 0;
+                }
+            }
+        }
+        return new_layer;
+    }
+    void selectAll(){
+        has_selection = true;
+        wxSize size = current_skin->getLayerSize();
+        selection_box.SetSize(size);
+        selection_box.x = 0;
+        selection_box.y = 0;
+    }
+    void selectNone(){
+        has_selection = false;
+    }
+
+
 protected:
     Skin *current_skin = NULL;
     Layer *current_layer = NULL;
@@ -204,6 +242,10 @@ protected:
 
     // color picker
     RGBColor current_color;
+
+    // selection
+    bool has_selection = false;
+    wxRect selection_box;
 
     void screenToImage(int x, int y, double &out_x, double &out_y)
     {
@@ -259,10 +301,19 @@ protected:
                     {
                         sendStartPaintEvent();
                     }
-                    // color picker
-                    if (current_pen->getToolType() == ToolType::DROPPER)
+                    else
+                        // color picker
+                        if (current_pen->getToolType() == ToolType::DROPPER)
                     {
                         pickColor(x1, y1);
+                    }
+                    else if (current_pen->getToolType() == ToolType::SELECT)
+                    {
+                        has_selection = true;
+                        selection_box.SetX(x1);
+                        selection_box.SetY(y1);
+                        selection_box.SetWidth(0);
+                        selection_box.SetHeight(0);
                     }
                 }
             }
@@ -274,6 +325,19 @@ protected:
                     int x1, y1;
                     screenToImage(x, y, x1, y1);
                     current_pen->moveTo(x1, y1);
+                    if (current_pen->getToolType() == ToolType::SELECT)
+                    {
+                        int w = x1 - selection_box.x;
+                        int h = y1 - selection_box.y;
+                        if(w >= 0){
+                            w += 1;
+                        }
+                        if (h >= 0){
+                            h += 1;
+                        }
+                        selection_box.SetWidth(w);
+                        selection_box.SetHeight(h);
+                    }
                 }
                 if (event.LeftUp())
                 {
@@ -353,6 +417,7 @@ protected:
             need_redraw_bg = false;
         }
 
+        // create dc and gc
         wxAutoBufferedPaintDC dc(this);
         dc.DrawBitmap(wxBitmap(bg_checker), 0, 0);
         wxGraphicsContext *gc = wxGraphicsContext::Create(dc);
@@ -362,6 +427,7 @@ protected:
         {
             int w = this->GetSize().GetWidth();
             int h = this->GetSize().GetHeight();
+
             if (need_redraw_skin)
             {
                 wxImage img2 = current_skin->render();
@@ -402,27 +468,27 @@ protected:
             }
             gc->DrawBitmap(wxBitmap(skin_render, 32), 0, 0, w, h);
 
-            //draw outline
-            SkinFormat format;
-            switch (this->current_skin->getSkinType())
-            {
-            case SkinType::STEVE:
-                format = this->skin_formats.at(0);
-                break;
-            case SkinType::ALEX:
-                format = this->skin_formats.at(1);
-                break;
-            case SkinType::STEVE_MIN:
-                format = this->skin_formats.at(2);
-                break;
-            case SkinType::ALEX_MIN:
-                format = this->skin_formats.at(3);
-            default:
-                break;
-            }
-
             if (need_redraw_block)
             {
+                //draw outline
+                SkinFormat format;
+                switch (this->current_skin->getSkinType())
+                {
+                case SkinType::STEVE:
+                    format = this->skin_formats.at(0);
+                    break;
+                case SkinType::ALEX:
+                    format = this->skin_formats.at(1);
+                    break;
+                case SkinType::STEVE_MIN:
+                    format = this->skin_formats.at(2);
+                    break;
+                case SkinType::ALEX_MIN:
+                    format = this->skin_formats.at(3);
+                default:
+                    break;
+                }
+
                 block_render = wxImage(this->GetSize());
                 block_render.InitAlpha();
                 clearAlpha(block_render);
@@ -459,8 +525,20 @@ protected:
             }
             gc->DrawBitmap(wxBitmap(block_render), 0, 0, w, h);
         }
+
+        // render selection box
+        if (has_selection)
+        {
+            gc->SetPen(wxPen(wxColor(255, 0, 255), 1.5, wxPENSTYLE_SOLID));
+            gc->SetBrush(wxNullBrush);
+            int sel_x, sel_y;
+            wxRect box = reCalcRect(selection_box);
+            imageToScreen(box.GetX(), box.GetY(), sel_x, sel_y);
+            gc->DrawRectangle(sel_x, sel_y, (box.GetWidth()) * scale, (box.GetHeight()) * scale);
+        }
+
         // render brush square
-        if (current_pen != nullptr)
+        if (current_pen != nullptr && current_skin != nullptr && current_layer != nullptr)
         {
             int size;
             if (current_pen->getToolType() == ToolType::DROPPER)
@@ -585,6 +663,9 @@ public:
     ~MyFrame()
     {
         delete current_skin;
+        if(copied_layer != nullptr){
+            delete copied_layer;
+        }
         CommandManager::destruct();
         LayerIdManager::destroy();
     }
@@ -596,10 +677,12 @@ public:
 
         wxMenu *menu_file = new wxMenu();
         wxMenu *menu_edit = new wxMenu();
+        wxMenu *menu_select = new wxMenu();
         wxMenu *menu_view = new wxMenu();
 
         bar->Append(menu_file, _T("File"));
         bar->Append(menu_edit, _T("Edit"));
+        bar->Append(menu_select, _T("Selection"));
         bar->Append(menu_view, _T("View"));
 
         wxMenuItem *item;
@@ -621,6 +704,15 @@ public:
         Bind(wxEVT_MENU, &MyFrame::onRedo, this, item->GetId());
         item = menu_edit->Append(wxID_ANY, _T("Undo\tCtrl+Z"), _T("undo last operation"));
         Bind(wxEVT_MENU, &MyFrame::onUndo, this, item->GetId());
+        item = menu_edit->Append(wxID_ANY, _T("Copy Selected\tCtrl+C"), _T("copy the selected"));
+        Bind(wxEVT_MENU, &MyFrame::onCopy, this, item->GetId());
+        item = menu_edit->Append(wxID_ANY, _T("Paste\tCtrl+V"), _T("paste the copied layer(or selection)"));
+        Bind(wxEVT_MENU, &MyFrame::onPaste, this, item->GetId());
+
+        item = menu_select->Append(wxID_ANY, _T("Select All\tCtrl+A"));
+        Bind(wxEVT_MENU, &MyFrame::onSelectAll, this, item->GetId());
+        item = menu_select->Append(wxID_ANY, _T("Deselect All\tCtrl+Shift+A"));
+        Bind(wxEVT_MENU, &MyFrame::onSelectNone, this, item->GetId());
 
         item = menu_view->Append(wxID_ANY, _T("Open Reference Image"), _T("open a reference image"));
         Bind(wxEVT_MENU, &MyFrame::onOpenReference, this, item->GetId());
@@ -636,6 +728,8 @@ public:
 protected:
     Skin *current_skin = nullptr;
     wxString save_dir = wxEmptyString;
+
+    Layer* copied_layer = nullptr;
 
     void onToolChange(wxCommandEvent &event)
     {
@@ -906,6 +1000,35 @@ protected:
         canvas->redraw();
         canvas->Update();
     }
+    void onCopy(wxCommandEvent& event){
+        if(copied_layer != nullptr){
+            delete copied_layer;
+        }
+        copied_layer = canvas->copySelected();
+    }
+    void onPaste(wxCommandEvent& event){
+        if (copied_layer == nullptr || current_skin == nullptr)
+        {
+            return;
+        }
+        Layer* pasted_layer = new Layer(*copied_layer);
+        pasted_layer->setName("Pasted Layer");
+        current_skin->addLayer(pasted_layer);
+
+        layer_viewer->loadSkin(current_skin);
+        layer_viewer->setActiveLayer();
+        canvas->redraw();
+
+        tool_box->setSelection(5); // switch to move tool
+        canvas->setPen(tool_box->getTool());
+    }
+    void onSelectAll(wxCommandEvent& event){
+        canvas->selectAll();
+    }
+    void onSelectNone(wxCommandEvent& event){
+        canvas->selectNone();
+    }
+
 
     void onOpenReference(wxCommandEvent &event)
     {

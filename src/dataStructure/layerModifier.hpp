@@ -151,7 +151,10 @@ public:
     }
     virtual LayerAlphaBlendModifier *copy()
     {
-        return new LayerAlphaBlendModifier(*this);
+        LayerAlphaBlendModifier* c = new LayerAlphaBlendModifier(*this);
+        c->alpha_slider = nullptr;
+        c->entry = nullptr;
+        return c;
     }
     virtual void makeUI(wxWindow *panel) override
     {
@@ -255,7 +258,9 @@ public:
     }
     virtual LayerModifier *copy()
     {
-        return new LayerColorRampModifier(*this);
+        LayerColorRampModifier* c = new LayerColorRampModifier(*this);
+        c->ramp = nullptr;
+        return c;
     }
 
     // used to create the control panel

@@ -13,6 +13,7 @@
 #include "../dataStructure/tools/lightenDarken.hpp"
 #include "../dataStructure/tools/dropper.hpp"
 #include "../dataStructure/tools/moveTool.hpp"
+#include "../dataStructure/tools/selectionTool.hpp"
 
 wxDECLARE_EVENT(EVT_BUTTON_LIST_CHANGED, wxCommandEvent);
 wxDEFINE_EVENT(EVT_BUTTON_LIST_CHANGED, wxCommandEvent);
@@ -62,6 +63,26 @@ public:
     int getSelection()
     {
         return selection;
+    }
+    void setSelection(int i){
+        if(i < 0 || i >= button_list.size()){
+            if(button_list.size() > 0){
+                selection = 0;
+            } else{
+                selection = -1;
+            }
+        } else{
+            selection = i;
+        }
+        int size = button_list.size();
+        for (int index = 0; index < size; index++)
+        {
+            if(index == selection){
+                button_list.at(index)->SetValue(true);
+            } else{
+                button_list.at(index)->SetValue(false);
+            }
+        }
     }
 
 protected:
@@ -252,9 +273,20 @@ public:
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
         button_list->addButton(button);
 
+        // selection tool
+        tool_list.push_back(new SelectionTool());
+        icon.LoadFile(icon_path + _T("selection.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        panel = new wxScrolledWindow(option_book);
+        panel->SetScrollRate(0, 5);
+
+        option_book->AddPage(panel, _T("SelectionTool"));
+        button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button_list->addButton(button);
+
         // do the layout
         splitter2->SplitVertically(common_options, option_book, 100);
-        this->SplitVertically(button_list, splitter2, 100);
+        this->SplitVertically(button_list, splitter2, 120);
 
         Bind(EVT_BUTTON_LIST_CHANGED, &ToolBox::onButtonChange, this);
     }
@@ -289,6 +321,12 @@ public:
             (*i)->setProperty("B", rgb[2]);
             (*i)->setProperty("A", color->getAlpha());
         }
+    }
+    void setSelection(int index){
+        button_list->setSelection(index);
+        option_book->ChangeSelection(button_list->getSelection());
+        //update common options
+        size_ctrl->SetValue(getTool()->getProperty("SIZE"));
     }
 
 protected:

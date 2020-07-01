@@ -1,7 +1,5 @@
 ## Tools:
-- selection tools
-- move tool
-- copy and paste tools, drag to select, click to move/paste
+
 
 ## canvas:
 - use color inverse for brush square
@@ -16,8 +14,7 @@
 ## Modifier
 - better modifier viewer
 - The layer overlay modifier
-- can apply the modifier
 
 ## Others
-better color palette, store recent used colors.
-fix bug when the "undo" layer is deleted
+- better color palette, store recent used colors.
+- reference window offset reset

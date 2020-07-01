@@ -151,6 +151,10 @@ public:
         if (current_skin != NULL)
         {
             current_layer = current_skin->getLayer(index);
+            if (current_pen != nullptr)
+            {
+                current_pen->setLayer(current_layer);
+            }
         }
     }
 
@@ -160,6 +164,10 @@ public:
     void setPen(Tool *pen)
     {
         current_pen = pen;
+        if (current_layer != nullptr)
+        {
+            current_pen->setLayer(current_layer);
+        }
     }
     /**
      * call this to refresh the skin render. This is used by the layer modifier events.
@@ -183,30 +191,41 @@ public:
     }
 
     // copy paste functions
-    Layer* copySelected(bool cut = false){
-        if(current_layer == nullptr || !has_selection){
+    Layer *copySelected(bool cut = false)
+    {
+        if (current_layer == nullptr || !has_selection)
+        {
             return nullptr;
         }
-        Layer* new_layer = new Layer(*current_layer);
-        wxImage* img = new_layer->getImage();
+        Layer *new_layer = new Layer(*current_layer);
+        wxImage *img = new_layer->getImage();
         int w = img->GetWidth();
         int h = img->GetHeight();
-        u_char* alpha = img->GetAlpha();
+        u_char *alpha = img->GetAlpha();
+
+        wxImage* img2  = current_layer->getImage();
+        u_char* alpha2 = img2->GetAlpha();
         wxRect sel = reCalcRect(selection_box);
         for (int y = 0; y < h; y++)
         {
             for (int x = 0; x < w; x++)
             {
-                if(sel.Contains(x, y)){
-
-                } else{
+                if (sel.Contains(x, y))
+                {
+                    if(cut){
+                        alpha2[y * w + x] = 0;
+                    }
+                }
+                else
+                {
                     alpha[y * w + x] = 0;
                 }
             }
         }
         return new_layer;
     }
-    void selectAll(){
+    void selectAll()
+    {
         has_selection = true;
         wxSize size = current_skin->getLayerSize();
         selection_box.SetSize(size);
@@ -214,11 +233,11 @@ public:
         selection_box.y = 0;
         Refresh();
     }
-    void selectNone(){
+    void selectNone()
+    {
         has_selection = false;
         Refresh();
     }
-
 
 protected:
     Skin *current_skin = NULL;
@@ -334,10 +353,12 @@ protected:
                     {
                         int w = x1 - selection_box.x;
                         int h = y1 - selection_box.y;
-                        if(w >= 0){
+                        if (w >= 0)
+                        {
                             w += 1;
                         }
-                        if (h >= 0){
+                        if (h >= 0)
+                        {
                             h += 1;
                         }
                         selection_box.SetWidth(w);
@@ -677,7 +698,8 @@ public:
     ~MyFrame()
     {
         delete current_skin;
-        if(copied_layer != nullptr){
+        if (copied_layer != nullptr)
+        {
             delete copied_layer;
         }
         CommandManager::destruct();
@@ -743,20 +765,28 @@ protected:
     Skin *current_skin = nullptr;
     wxString save_dir = wxEmptyString;
 
-    Layer* copied_layer = nullptr;
+    Layer *copied_layer = nullptr;
 
-    void updateFrameTitle(){
-        if(current_skin == nullptr){
+    void updateFrameTitle()
+    {
+        if (current_skin == nullptr)
+        {
             this->SetTitle(_T("BetterSkin"));
             return;
         }
-        if(save_dir == wxEmptyString){
+        if (save_dir == wxEmptyString)
+        {
             this->SetTitle(_T("untitled* - BetterSkin"));
-        } else{
+        }
+        else
+        {
             wxString name = wxFileName::FileName(save_dir).GetName();
-            if(current_skin->isModified()){
+            if (current_skin->isModified())
+            {
                 this->SetTitle(name + _T("* - BetterSkin"));
-            } else{
+            }
+            else
+            {
                 this->SetTitle(name + _T(" - BetterSkin"));
             }
         }
@@ -802,7 +832,8 @@ protected:
             delete color;
         }
     }
-    void onCanvasModified(wxCommandEvent &event){
+    void onCanvasModified(wxCommandEvent &event)
+    {
         updateFrameTitle();
     }
 
@@ -959,12 +990,17 @@ protected:
         tryCloseCurrentSkin();
         updateFrameTitle();
     }
-    void onCloseFrame(wxCloseEvent &event){
-        if(event.CanVeto()){
+    void onCloseFrame(wxCloseEvent &event)
+    {
+        if (event.CanVeto())
+        {
             bool succeed = tryCloseCurrentSkin();
-            if(!succeed){
+            if (!succeed)
+            {
                 event.Veto();
-            }else{
+            }
+            else
+            {
                 event.Skip();
             }
         }
@@ -1052,18 +1088,21 @@ protected:
         canvas->Update();
         updateFrameTitle();
     }
-    void onCopy(wxCommandEvent& event){
-        if(copied_layer != nullptr){
+    void onCopy(wxCommandEvent &event)
+    {
+        if (copied_layer != nullptr)
+        {
             delete copied_layer;
         }
         copied_layer = canvas->copySelected();
     }
-    void onPaste(wxCommandEvent& event){
+    void onPaste(wxCommandEvent &event)
+    {
         if (copied_layer == nullptr || current_skin == nullptr)
         {
             return;
         }
-        Layer* pasted_layer = new Layer(*copied_layer);
+        Layer *pasted_layer = new Layer(*copied_layer);
         pasted_layer->setName("Pasted Layer");
         int active_layer = layer_viewer->getActiveLayer();
 
@@ -1077,10 +1116,12 @@ protected:
         canvas->setPen(tool_box->getTool());
         updateFrameTitle();
     }
-    void onSelectAll(wxCommandEvent& event){
+    void onSelectAll(wxCommandEvent &event)
+    {
         canvas->selectAll();
     }
-    void onSelectNone(wxCommandEvent& event){
+    void onSelectNone(wxCommandEvent &event)
+    {
         canvas->selectNone();
     }
 

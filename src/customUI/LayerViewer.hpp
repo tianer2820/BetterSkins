@@ -45,21 +45,25 @@ public:
         wxButton *but_up = new wxButton(this, wxID_ANY, wxString::FromUTF8("UP"));
         wxButton *but_down = new wxButton(this, wxID_ANY, wxString::FromUTF8("DOWN"));
         wxButton *but_duplicate = new wxButton(this, wxID_ANY, wxString::FromUTF8("DUP"));
+        wxButton *but_merge = new wxButton(this, wxID_ANY, wxString::FromUTF8("MERGE"));
         but_add->SetMinSize(wxSize(20, 20));
         but_delete->SetMinSize(wxSize(20, 20));
         but_up->SetMinSize(wxSize(20, 20));
         but_down->SetMinSize(wxSize(20, 20));
         but_duplicate->SetMinSize(wxSize(20, 20));
+        but_merge->SetMinSize(wxSize(20, 20));
         Bind(wxEVT_BUTTON, &LayerViewer::onAdd, this, but_add->GetId());
         Bind(wxEVT_BUTTON, &LayerViewer::onDelete, this, but_delete->GetId());
         Bind(wxEVT_BUTTON, &LayerViewer::onMoveUp, this, but_up->GetId());
         Bind(wxEVT_BUTTON, &LayerViewer::onMoveDown, this, but_down->GetId());
         Bind(wxEVT_BUTTON, &LayerViewer::onDuplicate, this, but_duplicate->GetId());
+        Bind(wxEVT_BUTTON, &LayerViewer::onMerge, this, but_merge->GetId());
         button_box->Add(but_add, 1, wxALL | wxEXPAND, 2);
         button_box->Add(but_delete, 1, wxALL | wxEXPAND, 2);
         button_box->Add(but_up, 1, wxALL | wxEXPAND, 2);
         button_box->Add(but_down, 1, wxALL | wxEXPAND, 2);
         button_box->Add(but_duplicate, 1, wxALL | wxEXPAND, 2);
+        button_box->Add(but_merge, 1, wxALL | wxEXPAND, 2);
         main_box->Add(button_box, 0, wxEXPAND);
 
         SetSizer(main_box);
@@ -297,6 +301,30 @@ protected:
         current_document->addLayer(new_layer, index + 1);
         sendUpdateEvent();
     }
+    void onMerge(wxCommandEvent &event){
+        int index = list_box->GetSelectedRow();
+        if (current_document == NULL || index == wxNOT_FOUND)
+        {
+            return;
+        }
+        int index_layer = list_box->GetItemCount() - 1 - index;
+        if(index_layer == 0){
+            return; // can't merge down if this is the bottom layer
+        }
+        list_box->DeleteItem(index);
+        list_box->SelectRow(index);
+        
+        Layer* layer = current_document->getLayer(index_layer);
+        Layer* lower = current_document->getLayer(index_layer - 1);
+        wxImage upper_img = layer->render();
+        wxImage* lower_img = lower->getImage();
+        alphaOver(*lower_img, upper_img);
+
+        current_document->deleteLayer(index_layer);
+        sendLayerChangeEvent();
+        sendUpdateEvent();
+    }
+
     void sendUpdateEvent()
     {
         wxCommandEvent *event = new wxCommandEvent(EVT_LAYER_UPDATE, GetId());

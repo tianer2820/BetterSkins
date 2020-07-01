@@ -122,7 +122,7 @@ public:
         int len = list_book->GetPageCount();
         for (int i = 0; i < len; i++)
         {
-            list_book->RemovePage(0);
+            list_book->DeletePage(0);
         }
         // set layer to NULL
         active_layer = NULL;

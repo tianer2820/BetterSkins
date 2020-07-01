@@ -8,6 +8,7 @@
 #include <wx/tglbtn.h>
 #include <wx/simplebook.h>
 #include <wx/file.h>
+#include <wx/filename.h>
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -40,6 +41,9 @@ using namespace std;
 
 wxDECLARE_EVENT(EVT_CANVAS_PAINT, wxCommandEvent);
 wxDEFINE_EVENT(EVT_CANVAS_PAINT, wxCommandEvent);
+
+wxDECLARE_EVENT(EVT_CANVAS_MODIFIED, wxCommandEvent);
+wxDEFINE_EVENT(EVT_CANVAS_MODIFIED, wxCommandEvent);
 /**
  * To Display the skin, and draw on it.
  * 
@@ -48,6 +52,7 @@ wxDEFINE_EVENT(EVT_CANVAS_PAINT, wxCommandEvent);
  * 
  * This class emmits this event:
  * EVT_CANVAS_PAINT: when the canvas starts to paint
+ * EVT_CANVAS_MODIFIED: when the canvas is painted on
  */
 class Canvas : public wxWindow, public ColorPicker
 {
@@ -284,6 +289,7 @@ protected:
                 // start drawing a stroke
                 if (current_pen != NULL)
                 {
+                    sendModifiedEvent();
                     need_redraw_skin = true;
                     this->CaptureMouse();
                     is_drawing = true;
@@ -318,6 +324,7 @@ protected:
                 need_redraw_skin = true;
                 if (current_pen != NULL)
                 {
+                    current_skin->setModified(true);
                     int x1, y1;
                     screenToImage(x, y, x1, y1);
                     current_pen->moveTo(x1, y1);
@@ -586,6 +593,12 @@ protected:
         event->SetEventObject(this);
         wxQueueEvent(GetEventHandler(), event);
     }
+    void sendModifiedEvent()
+    {
+        wxCommandEvent *event = new wxCommandEvent(EVT_CANVAS_MODIFIED, GetId());
+        event->SetEventObject(this);
+        wxQueueEvent(GetEventHandler(), event);
+    }
     void pickColor(int x, int y)
     {
         if (current_layer != nullptr)
@@ -611,14 +624,16 @@ protected:
 class MyFrame : public wxFrame
 {
 public:
-    MyFrame() : wxFrame(NULL, wxID_ANY, "Hello World")
+    MyFrame() : wxFrame(NULL, wxID_ANY, _T("BetterSkin"))
     {
         CommandManager::create();
         LayerIdManager::create();
         makeMenu();
         wxInitAllImageHandlers();
+        updateFrameTitle();
 
         this->SetSize(1000, 600);
+        Bind(wxEVT_CLOSE_WINDOW, &MyFrame::onCloseFrame, this);
 
         main_panel = new wxPanel(this);
 
@@ -632,6 +647,7 @@ public:
         canvas = new Canvas(middle_splitter);
         canvas->loadSkin(current_skin);
         Bind(EVT_COLOR_PICKER_CHANGE, &MyFrame::onColorChange, this, canvas->GetId());
+        Bind(EVT_CANVAS_MODIFIED, &MyFrame::onCanvasModified, this, canvas->GetId());
 
         tool_box = new ToolBox(middle_splitter);
         Bind(EVT_TOOL_CHANGE, &MyFrame::onToolChange, this, tool_box->GetId());
@@ -727,6 +743,23 @@ protected:
 
     Layer* copied_layer = nullptr;
 
+    void updateFrameTitle(){
+        if(current_skin == nullptr){
+            this->SetTitle(_T("BetterSkin"));
+            return;
+        }
+        if(save_dir == wxEmptyString){
+            this->SetTitle(_T("untitled* - BetterSkin"));
+        } else{
+            wxString name = wxFileName::FileName(save_dir).GetName();
+            if(current_skin->isModified()){
+                this->SetTitle(name + _T("* - BetterSkin"));
+            } else{
+                this->SetTitle(name + _T(" - BetterSkin"));
+            }
+        }
+    }
+
     void onToolChange(wxCommandEvent &event)
     {
         canvas->setPen(tool_box->getTool());
@@ -749,6 +782,7 @@ protected:
     }
     void onNeedRefresh(wxCommandEvent &event)
     {
+        updateFrameTitle();
         canvas->redraw();
         canvas->Update();
     }
@@ -765,6 +799,9 @@ protected:
             }
             delete color;
         }
+    }
+    void onCanvasModified(wxCommandEvent &event){
+        updateFrameTitle();
     }
 
     void onNewSkin(wxCommandEvent &event)
@@ -803,6 +840,7 @@ protected:
         canvas->loadSkin(current_skin);
         layer_viewer->loadSkin(current_skin);
         layer_viewer->setActiveLayer();
+        updateFrameTitle();
     }
     /**
      * return false only when user canceled
@@ -842,6 +880,7 @@ protected:
     void onSave(wxCommandEvent &event)
     {
         doSave();
+        updateFrameTitle();
     }
     void onOpen(wxCommandEvent &event)
     {
@@ -871,6 +910,7 @@ protected:
         canvas->loadSkin(current_skin);
         layer_viewer->loadSkin(current_skin);
         layer_viewer->setActiveLayer();
+        updateFrameTitle();
     }
     void onExport(wxCommandEvent &event)
     {
@@ -910,10 +950,22 @@ protected:
         import_dialog->Destroy();
         canvas->redraw();
         canvas->Update();
+        updateFrameTitle();
     }
     void onClose(wxCommandEvent &event)
     {
         tryCloseCurrentSkin();
+        updateFrameTitle();
+    }
+    void onCloseFrame(wxCloseEvent &event){
+        if(event.CanVeto()){
+            bool succeed = tryCloseCurrentSkin();
+            if(!succeed){
+                event.Veto();
+            }else{
+                event.Skip();
+            }
+        }
     }
 
     /**
@@ -989,12 +1041,14 @@ protected:
         CommandManager::getInstance()->undo();
         canvas->redraw();
         canvas->Update();
+        updateFrameTitle();
     }
     void onRedo(wxCommandEvent &event)
     {
         CommandManager::getInstance()->redo();
         canvas->redraw();
         canvas->Update();
+        updateFrameTitle();
     }
     void onCopy(wxCommandEvent& event){
         if(copied_layer != nullptr){
@@ -1017,6 +1071,7 @@ protected:
 
         tool_box->setSelection(5); // switch to move tool
         canvas->setPen(tool_box->getTool());
+        updateFrameTitle();
     }
     void onSelectAll(wxCommandEvent& event){
         canvas->selectAll();
@@ -1024,7 +1079,6 @@ protected:
     void onSelectNone(wxCommandEvent& event){
         canvas->selectNone();
     }
-
 
     void onOpenReference(wxCommandEvent &event)
     {

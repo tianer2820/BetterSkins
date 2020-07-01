@@ -5,6 +5,7 @@
 #include <string>
 
 #include "layerIdManager.hpp"
+#include "layer.hpp"
 
 using namespace std;
 
@@ -41,9 +42,10 @@ public:
     * this class will delete the color objects automatically
     * the length of the two list should be the same
     */
-    PaintCommand(u_int id, wxImage *img, vector<wxPoint> point_list, vector<Color *> color_list)
+    PaintCommand(Layer* l, wxImage *img, vector<wxPoint> point_list, vector<Color *> color_list)
     {
-        layer_id = id;
+        this->layer = l;
+        layer_id = layer->getId();
         image = img;
         this->point_list = point_list;
         this->color_list = color_list;
@@ -79,6 +81,7 @@ public:
     }
 
 protected:
+    Layer* layer;
     u_int layer_id;
     wxImage *image;
     vector<wxPoint> point_list;
@@ -111,6 +114,7 @@ protected:
             // increase iterators
             point++;
             color++;
+            layer->setModified(true);
         }
     }
 };

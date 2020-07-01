@@ -346,7 +346,7 @@ protected:
         
         Layer* layer = current_document->getLayer(index_layer);
         Layer* lower = current_document->getLayer(index_layer - 1);
-        wxImage upper_img = layer->render();
+        wxImage upper_img = layer->renderRaw();
         wxImage* lower_img = lower->getImage();
         alphaOver(*lower_img, upper_img);
 

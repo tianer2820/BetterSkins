@@ -198,6 +198,7 @@ public:
 
         option_book->AddPage(panel, _T("Pen"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button->SetToolTip(_T("Simple pixel pen"));
         button_list->addButton(button);
 
         // noise pen
@@ -209,6 +210,7 @@ public:
 
         option_book->AddPage(panel, _T("Noise"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button->SetToolTip(_T("Noise pen"));
         button_list->addButton(button);
 
         // eraser
@@ -220,6 +222,7 @@ public:
 
         option_book->AddPage(panel, _T("Eraser"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button->SetToolTip(_T("Eraser"));
         button_list->addButton(button);
 
         // Lightness brush
@@ -249,6 +252,7 @@ public:
         panel->SetSizer(grid);
         option_book->AddPage(panel, _T("Lightness"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button->SetToolTip(_T("Lightness pen"));
         button_list->addButton(button);
 
         // dropper
@@ -260,6 +264,7 @@ public:
 
         option_book->AddPage(panel, _T("Dropper"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button->SetToolTip(_T("Color picker"));
         button_list->addButton(button);
 
         // move tool
@@ -271,6 +276,7 @@ public:
 
         option_book->AddPage(panel, _T("MoveTool"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button->SetToolTip(_T("Move Tool"));
         button_list->addButton(button);
 
         // selection tool
@@ -282,6 +288,7 @@ public:
 
         option_book->AddPage(panel, _T("SelectionTool"));
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
+        button->SetToolTip(_T("Box selection"));
         button_list->addButton(button);
 
         // do the layout

@@ -38,12 +38,32 @@ public:
         Bind(wxEVT_TEXT, &LayerControlPanel::onRename, this, name_ctrl->GetId());
         name_box->Add(name_ctrl, 1, wxALL | wxEXPAND, 5);
         main_box->Add(name_box, 0, wxEXPAND);
+
         // buttons
+        wxImage icon;
+        wxString icon_path = _T("./resources/icons/");
         wxBoxSizer *button_box = new wxBoxSizer(wxHORIZONTAL);
-        wxButton *but_add = new wxButton(this, wxID_ANY, wxString::FromUTF8("+"));
-        wxButton *but_delete = new wxButton(this, wxID_ANY, wxString::FromUTF8("-"));
-        wxButton *but_up = new wxButton(this, wxID_ANY, wxString::FromUTF8("UP"));
-        wxButton *but_down = new wxButton(this, wxID_ANY, wxString::FromUTF8("DOWN"));
+        //add
+        icon.LoadFile(icon_path + _T("add.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_add = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_add->SetToolTip("Add a modifier to this layer");
+        //delete
+        icon.LoadFile(icon_path + _T("delete.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_delete = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_delete->SetToolTip("Delete the selected modifier");
+        //up
+        icon.LoadFile(icon_path + _T("up.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_up = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_up->SetToolTip("Move this modifier up the stack");
+        //down
+        icon.LoadFile(icon_path + _T("down.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_down = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_down->SetToolTip("Move this modifier down the stack");
+
         but_add->SetMinSize(wxSize(20, 20));
         but_delete->SetMinSize(wxSize(20, 20));
         but_up->SetMinSize(wxSize(20, 20));

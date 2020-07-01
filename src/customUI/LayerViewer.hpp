@@ -38,14 +38,42 @@ public:
         Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &LayerViewer::onDoubleClick, this, list_box->GetId());
         Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &LayerViewer::onToggleVisable, this, list_box->GetId());
         main_box->Add(list_box, 1, wxBOTTOM | wxEXPAND, 5);
-
+        
+        // buttons
+        wxImage icon;
+        wxString icon_path = _T("./resources/icons/");
         wxBoxSizer *button_box = new wxBoxSizer(wxHORIZONTAL);
-        wxButton *but_add = new wxButton(this, wxID_ANY, wxString::FromUTF8("+"));
-        wxButton *but_delete = new wxButton(this, wxID_ANY, wxString::FromUTF8("-"));
-        wxButton *but_up = new wxButton(this, wxID_ANY, wxString::FromUTF8("UP"));
-        wxButton *but_down = new wxButton(this, wxID_ANY, wxString::FromUTF8("DOWN"));
-        wxButton *but_duplicate = new wxButton(this, wxID_ANY, wxString::FromUTF8("DUP"));
-        wxButton *but_merge = new wxButton(this, wxID_ANY, wxString::FromUTF8("MERGE"));
+        //add
+        icon.LoadFile(icon_path + _T("add.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_add = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_add->SetToolTip(_T("Add a new layer"));
+        //delete
+        icon.LoadFile(icon_path + _T("delete.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_delete = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_delete->SetToolTip(_T("Delete the selected layer"));
+        //up
+        icon.LoadFile(icon_path + _T("up.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_up = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_up->SetToolTip(_T("Move this layer up"));
+        //down
+        icon.LoadFile(icon_path + _T("down.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_down = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_down->SetToolTip(_T("Move this layer down"));
+        //duplicate
+        icon.LoadFile(icon_path + _T("dup.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_duplicate = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_duplicate->SetToolTip(_T("Duplicate the selected layer"));
+        //merge
+        icon.LoadFile(icon_path + _T("merge.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton *but_merge = new wxBitmapButton(this, wxID_ANY, wxBitmap(icon));
+        but_merge->SetToolTip(_T("Merge this layer to the lower"));
+
         but_add->SetMinSize(wxSize(20, 20));
         but_delete->SetMinSize(wxSize(20, 20));
         but_up->SetMinSize(wxSize(20, 20));

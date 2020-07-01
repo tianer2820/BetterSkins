@@ -575,7 +575,7 @@ protected:
             {
                 size = current_pen->getProperty("SIZE");
             }
-            if (size > 0 && current_pen->getToolType() != ToolType::MOVE)
+            if (size > 0 && current_pen->getToolType() != ToolType::MOVE && current_pen->getToolType() != ToolType::SELECT)
             { // don't display cursor if is the move tool.
                 int mouse_img_x, mouse_img_y;
                 wxPoint mouse_point = wxGetMousePosition();

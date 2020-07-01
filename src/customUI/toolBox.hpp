@@ -269,12 +269,31 @@ public:
 
         // move tool
         tool_list.push_back(new MoveTool());
-        icon.LoadFile(icon_path + _T("move.png"));
-        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
         panel = new wxScrolledWindow(option_book);
         panel->SetScrollRate(0, 5);
+        grid = new wxGridSizer(2);
+        wxBoxSizer* box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+        icon.LoadFile(icon_path + _T("mirror_x.png"));
+        icon.Rescale(20, 20, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton* mirror_x_but = new wxBitmapButton(panel, wxID_ANY, wxBitmap(icon));
+        icon.LoadFile(icon_path + _T("mirror_y.png"));
+        icon.Rescale(20, 20, wxIMAGE_QUALITY_BILINEAR);
+        wxBitmapButton* mirror_y_but = new wxBitmapButton(panel, wxID_ANY, wxBitmap(icon));
+        mirror_x_but->SetMinSize(wxSize(24, 24));
+        mirror_y_but->SetMinSize(wxSize(24, 24));
+        mirror_x_but->SetToolTip(_T("Mirror X"));
+        mirror_y_but->SetToolTip(_T("Mirror Y"));
+        Bind(wxEVT_BUTTON, &ToolBox::onMirrorX, this, mirror_x_but->GetId());
+        Bind(wxEVT_BUTTON, &ToolBox::onMirrorY, this, mirror_y_but->GetId());
+        grid->Add(mirror_x_but, 0, 0, 2);
+        grid->Add(mirror_y_but, 0, 0, 2);
+        box_sizer->Add(grid);
+        panel->SetSizer(box_sizer);
 
         option_book->AddPage(panel, _T("MoveTool"));
+        icon.LoadFile(icon_path + _T("move.png"));
+        icon.Rescale(16, 16, wxIMAGE_QUALITY_BILINEAR);
         button = new wxBitmapToggleButton(button_list, wxID_ANY, wxBitmap(icon));
         button->SetToolTip(_T("Move Tool"));
         button_list->addButton(button);
@@ -360,6 +379,20 @@ protected:
         }
         lighten_darken_tool->setProperty("INCREMENTAL", is_incremental);
     }
+    void onMirrorX(wxCommandEvent &event){
+        MoveTool* tool = dynamic_cast<MoveTool*>(tool_list.at(button_list->getSelection()));
+        if(tool != nullptr){
+            tool->mirrorX();
+            sendLayerUpdateEvent();
+        }
+    }
+    void onMirrorY(wxCommandEvent &event){
+        MoveTool* tool = dynamic_cast<MoveTool*>(tool_list.at(button_list->getSelection()));
+        if(tool != nullptr){
+            tool->mirrorY();
+            sendLayerUpdateEvent();
+        }
+    }
 
     void onSizeChange(wxSpinEvent &event)
     {
@@ -387,6 +420,11 @@ protected:
     void sendToolChangeEvent()
     {
         wxCommandEvent *event = new wxCommandEvent(EVT_TOOL_CHANGE, GetId());
+        event->SetEventObject(this);
+        wxQueueEvent(GetEventHandler(), event);
+    }
+    void sendLayerUpdateEvent(){
+        wxCommandEvent* event = new wxCommandEvent(EVT_LAYER_UPDATE, GetId());
         event->SetEventObject(this);
         wxQueueEvent(GetEventHandler(), event);
     }

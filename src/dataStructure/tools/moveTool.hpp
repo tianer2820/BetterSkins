@@ -76,6 +76,22 @@ public:
         }
         is_down = false;
     }
+    
+    void mirrorX(){
+        if(current_layer == nullptr){
+            return;
+        }
+        wxImage img = current_layer->getImage()->Mirror(true);
+        current_layer->getImage()->Paste(img, 0, 0);
+    }
+    void mirrorY(){
+        if(current_layer == nullptr){
+            return;
+        }
+        wxImage img = current_layer->getImage()->Mirror(false);
+        current_layer->getImage()->Paste(img, 0, 0);
+    }
+    
     virtual void setFunctionalKeys(bool shift, bool ctrl)
     {
     }

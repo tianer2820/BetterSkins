@@ -21,7 +21,6 @@ public:
                                                                           wxDefaultSize,
                                                                           wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT)
     {
-        // this->SetWindowStyleFlag();
         this->SetBackgroundStyle(wxBG_STYLE_PAINT);
 
         Bind(wxEVT_PAINT, &ReferenceWindow::onPaint, this);
@@ -40,6 +39,9 @@ public:
     bool loadImage(wxString file_name)
     {
         bool ret = img.LoadFile(file_name);
+        if(!img.HasAlpha()){
+            img.InitAlpha();
+        }
         Refresh();
         return ret;
     }
@@ -113,15 +115,22 @@ protected:
         {
             int img_x, img_y;
             screenToImage(event.GetX(), event.GetY(), img_x, img_y);
-            u_char *data = img.GetData();
-            int color[3];
-            int index = (img_y * img.GetWidth() + img_x) * 3;
-            for (int i = 0; i < 3; i++)
-            {
-                color[i] = data[index + i];
+            if (img_x < 0 || img_y < 0 || img_x >= img.GetWidth() || img_y >= img.GetHeight())
+            { // out of bound, ignore
             }
-            current_color.setRGB(color);
-            sendColorChangeEvent();
+            else
+            {
+                u_char *data = img.GetData();
+                int color[3];
+                int index = (img_y * img.GetWidth() + img_x) * 3;
+                for (int i = 0; i < 3; i++)
+                {
+                    color[i] = data[index + i];
+                }
+                current_color.setRGB(color);
+                sendColorChangeEvent();
+            }
+
             if (event.LeftUp())
             {
                 picking = false;
@@ -186,7 +195,12 @@ protected:
                         {
                             data[index * 3 + i] = img_data[img_i * 3 + i];
                         }
-                        alpha[index] = img.GetAlpha(img_x, img_y);
+                        if(img.HasAlpha()){
+                            alpha[index] = img.GetAlpha(img_x, img_y);
+                        } else{
+                            alpha[index] = 255;
+                        }
+                        
                     }
                 }
             }
@@ -198,12 +212,25 @@ protected:
             {
                 for (int channel = 0; channel < 3; channel++)
                 {
-                    data[i*3 + channel] = c[channel];
+                    data[i * 3 + channel] = c[channel];
                 }
             }
             
-            wxImage scaled = img.Scale(img_w * scale, img_h * scale, wxIMAGE_QUALITY_BILINEAR);
-            screen.Paste(scaled, x_offset, y_offset);
+            if(w * h < img_w * img_h * pow(scale, 2)){
+                int x1, y1, x2, y2;
+                screenToImage(0, 0, x1, y1);
+                screenToImage(w, h, x2, y2);
+                wxImage croped = wxImage(x2-x1, y2-y1);
+                croped.InitAlpha();
+                clearAlpha(croped);
+                croped.Paste(img, -x1, -y1);
+                wxImage scaled = croped.Scale(croped.GetWidth() * scale, croped.GetHeight() * scale, wxIMAGE_QUALITY_BILINEAR);
+                screen.Paste(scaled, 0, 0);
+            }else{
+                wxImage scaled = img.Scale(img_w * scale, img_h * scale, wxIMAGE_QUALITY_BILINEAR);
+                screen.Paste(scaled, x_offset, y_offset);
+            }
+            
         }
 
         dc.DrawBitmap(wxBitmap(screen), 0, 0);

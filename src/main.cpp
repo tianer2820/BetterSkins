@@ -203,8 +203,8 @@ public:
         int h = img->GetHeight();
         u_char *alpha = img->GetAlpha();
 
-        wxImage* img2  = current_layer->getImage();
-        u_char* alpha2 = img2->GetAlpha();
+        wxImage *img2 = current_layer->getImage();
+        u_char *alpha2 = img2->GetAlpha();
         wxRect sel = reCalcRect(selection_box);
         for (int y = 0; y < h; y++)
         {
@@ -212,7 +212,8 @@ public:
             {
                 if (sel.Contains(x, y))
                 {
-                    if(cut){
+                    if (cut)
+                    {
                         alpha2[y * w + x] = 0;
                     }
                 }
@@ -226,6 +227,9 @@ public:
     }
     void selectAll()
     {
+        if(current_skin == nullptr){
+            return;
+        }
         has_selection = true;
         wxSize size = current_skin->getLayerSize();
         selection_box.SetSize(size);
@@ -917,18 +921,26 @@ protected:
         doSave();
         updateFrameTitle();
     }
-    void onSaveAs(wxCommandEvent &event){
+    void onSaveAs(wxCommandEvent &event)
+    {
+        if (current_skin == nullptr)
+        {
+            return;
+        }
         wxString old_file = save_dir;
         save_dir = wxEmptyString;
         bool status = current_skin->isModified();
-        if(!status){
+        if (!status)
+        {
             current_skin->setModified(true);
         }
         bool success = doSave();
-        if(!success){
+        if (!success)
+        {
             // user canceled
             save_dir = old_file;
-            if(!status){
+            if (!status)
+            {
                 current_skin->setModified(false);
             }
         }
@@ -966,6 +978,10 @@ protected:
     }
     void onExport(wxCommandEvent &event)
     {
+        if (current_skin == nullptr)
+        {
+            return;
+        }
         wxFileDialog *export_dialog = new wxFileDialog(this, _T("Export png"),
                                                        wxEmptyString, wxEmptyString, _T("PNG File|*.png"), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
         int ret = export_dialog->ShowModal();
@@ -979,6 +995,10 @@ protected:
     }
     void onImport(wxCommandEvent &event)
     {
+        if (current_skin == nullptr)
+        {
+            return;
+        }
         wxFileDialog *import_dialog = new wxFileDialog(this, _T("Import png"),
                                                        wxEmptyString, wxEmptyString, _T("PNG File|*.png"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
         int ret = import_dialog->ShowModal();

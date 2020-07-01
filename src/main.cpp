@@ -48,10 +48,6 @@ wxDEFINE_EVENT(EVT_CANVAS_PAINT, wxCommandEvent);
  * 
  * This class emmits this event:
  * EVT_CANVAS_PAINT: when the canvas starts to paint
- * 
- * todo:
- * different tool type: pen, color picker, selection, move
- * emmit new event: color picked
  */
 class Canvas : public wxWindow, public ColorPicker
 {

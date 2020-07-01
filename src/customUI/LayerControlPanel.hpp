@@ -121,13 +121,16 @@ protected:
         wxPanel *control_panel = new wxPanel(panel);
         modifier->makeUI(control_panel);
         wxCheckBox *visable_box = new wxCheckBox(panel, wxID_ANY, _T("Visable"));
+        wxButton *apply_but = new wxButton(panel, wxID_ANY, _T("Apply"));
         wxBoxSizer *box = new wxBoxSizer(wxVERTICAL);
 
+        box->Add(apply_but, 0, wxALL | wxEXPAND, 2);
         box->Add(visable_box, 0, wxALL | wxEXPAND, 2);
         box->Add(control_panel, 1, wxALL | wxEXPAND, 2);
         panel->SetSizer(box);
         visable_box->SetValue(modifier->getVisible());
         panel->Bind(wxEVT_CHECKBOX, &LayerControlPanel::onToggleVisable, this, visable_box->GetId());
+        panel->Bind(wxEVT_BUTTON, &LayerControlPanel::onApply, this, apply_but->GetId());
 
         list_book->AddPage(panel, wxString::FromUTF8(modifier->getName()));
         panel->Show();
@@ -153,6 +156,24 @@ protected:
         }
         bool value = box->GetValue();
         modifier->setVisible(value);
+        sendUpdateEvent();
+    }
+    void onApply(wxCommandEvent & event){
+        if (active_layer == nullptr)
+        {
+            return; // weird thing happend... return anyway.
+        }
+        int modifier_index = list_book->GetSelection();
+        if (modifier_index == wxNOT_FOUND)
+        {
+            return; // weird thing happend again..
+        }
+        LayerModifier *modifier = active_layer->getModifierList().at(modifier_index);
+        
+        modifier->render(*(active_layer->getImage()));
+        
+        active_layer->deleteModifier(modifier_index);
+        list_book->DeletePage(modifier_index);
         sendUpdateEvent();
     }
     void onRename(wxCommandEvent &event)

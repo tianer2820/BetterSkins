@@ -729,6 +729,8 @@ public:
         Bind(wxEVT_MENU, &MyFrame::onOpen, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Save\tCtrl+S"), _T("save to a skin file"));
         Bind(wxEVT_MENU, &MyFrame::onSave, this, item->GetId());
+        item = menu_file->Append(wxID_ANY, _T("Save As\tCtrl+Shift+S"), _T("save to a new skin file"));
+        Bind(wxEVT_MENU, &MyFrame::onSaveAs, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Import"), _T("Import a png file to a layer"));
         Bind(wxEVT_MENU, &MyFrame::onImport, this, item->GetId());
         item = menu_file->Append(wxID_ANY, _T("Export"), _T("export to a png file"));
@@ -913,6 +915,23 @@ protected:
     void onSave(wxCommandEvent &event)
     {
         doSave();
+        updateFrameTitle();
+    }
+    void onSaveAs(wxCommandEvent &event){
+        wxString old_file = save_dir;
+        save_dir = wxEmptyString;
+        bool status = current_skin->isModified();
+        if(!status){
+            current_skin->setModified(true);
+        }
+        bool success = doSave();
+        if(!success){
+            // user canceled
+            save_dir = old_file;
+            if(!status){
+                current_skin->setModified(false);
+            }
+        }
         updateFrameTitle();
     }
     void onOpen(wxCommandEvent &event)

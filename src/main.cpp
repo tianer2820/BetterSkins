@@ -212,9 +212,11 @@ public:
         selection_box.SetSize(size);
         selection_box.x = 0;
         selection_box.y = 0;
+        Refresh();
     }
     void selectNone(){
         has_selection = false;
+        Refresh();
     }
 
 
@@ -1063,10 +1065,12 @@ protected:
         }
         Layer* pasted_layer = new Layer(*copied_layer);
         pasted_layer->setName("Pasted Layer");
-        current_skin->addLayer(pasted_layer);
+        int active_layer = layer_viewer->getActiveLayer();
+
+        current_skin->addLayer(pasted_layer, current_skin->getLayerNum() - active_layer - 1 + 1);
 
         layer_viewer->loadSkin(current_skin);
-        layer_viewer->setActiveLayer();
+        layer_viewer->setActiveLayer(active_layer);
         canvas->redraw();
 
         tool_box->setSelection(5); // switch to move tool

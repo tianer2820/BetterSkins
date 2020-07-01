@@ -143,7 +143,9 @@ public:
             sendLayerChangeEvent();
         }
     }
-
+    int getActiveLayer(){
+        return list_box->GetSelectedRow();
+    }
 protected:
     Skin *current_document = NULL;
     wxDataViewListCtrl *list_box = NULL;
@@ -173,8 +175,8 @@ protected:
     void onLayerChange(wxCommandEvent &event)
     {
         if(list_box->GetSelectedRow() == wxNOT_FOUND && list_box->GetItemCount() > 0){
-            // deselected, ignore. You must select something...
-            return;
+            // deselected, force select first layer. You must select something...
+            list_box->SelectRow(0);
         }
         sendLayerChangeEvent();
     }

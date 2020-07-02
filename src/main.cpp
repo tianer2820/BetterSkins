@@ -950,15 +950,15 @@ protected:
     }
     void onOpen(wxCommandEvent &event)
     {
-        bool success = tryCloseCurrentSkin();
-        if (!success)
-        {
-            return;
-        }
         wxFileDialog *fd = new wxFileDialog(this, _T("Open File..."),
                                             wxEmptyString, wxEmptyString, _T("JSON File|*.json"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
         int ret = fd->ShowModal();
         if (ret != wxID_OK)
+        {
+            return;
+        }
+        bool success = tryCloseCurrentSkin();
+        if (!success)
         {
             return;
         }

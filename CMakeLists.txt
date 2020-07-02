@@ -12,7 +12,7 @@ link_directories(wxWidgets/lib)
 link_directories(wxWidgets/lib/vc_x64_dll)
 
 if(NOT DEBUG_BUILD)
-    # add_compile_definitions(NDEBUG)
+    add_compile_definitions(NDEBUG)
 endif()
 
 add_subdirectory(./cpp-base64)

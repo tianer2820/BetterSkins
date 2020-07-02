@@ -661,6 +661,7 @@ public:
 
         this->SetSize(1000, 600);
         Bind(wxEVT_CLOSE_WINDOW, &MyFrame::onCloseFrame, this);
+        this->SetIcon(wxIcon("resources/icons/icon.png", wxBITMAP_TYPE_PNG));
 
         main_panel = new wxPanel(this);
 

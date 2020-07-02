@@ -874,6 +874,7 @@ protected:
             current_skin = new Skin("new skin", SkinType::ALEX_MIN);
             break;
         default:
+            return;
             break;
         }
         current_skin->addLayer(new Layer("Layer", current_skin->getLayerSize()));

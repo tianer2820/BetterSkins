@@ -628,9 +628,9 @@ protected:
     }
     void pickColor(int x, int y)
     {
-        if (current_layer != nullptr)
+        if (current_skin != nullptr)
         {
-            wxImage img = current_layer->render();
+            wxImage img = current_skin->render();
             int color[3];
             color[0] = img.GetRed(x, y);
             color[1] = img.GetGreen(x, y);

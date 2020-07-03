@@ -223,6 +223,10 @@ public:
                 }
             }
         }
+        if(cut){
+            need_redraw_skin = true;
+            Refresh();
+        }
         return new_layer;
     }
     void selectAll()
@@ -749,6 +753,8 @@ public:
         Bind(wxEVT_MENU, &MyFrame::onUndo, this, item->GetId());
         item = menu_edit->Append(wxID_ANY, _T("Copy Selected\tCtrl+C"), _T("copy the selected"));
         Bind(wxEVT_MENU, &MyFrame::onCopy, this, item->GetId());
+        item = menu_edit->Append(wxID_ANY, _T("Cut\tCtrl+X"), _T("cut selected"));
+        Bind(wxEVT_MENU, &MyFrame::onCut, this, item->GetId());
         item = menu_edit->Append(wxID_ANY, _T("Paste\tCtrl+V"), _T("paste the copied layer(or selection)"));
         Bind(wxEVT_MENU, &MyFrame::onPaste, this, item->GetId());
 
@@ -1136,6 +1142,13 @@ protected:
             delete copied_layer;
         }
         copied_layer = canvas->copySelected();
+    }
+    void onCut(wxCommandEvent &event){
+        if (copied_layer != nullptr)
+        {
+            delete copied_layer;
+        }
+        copied_layer = canvas->copySelected(true);
     }
     void onPaste(wxCommandEvent &event)
     {

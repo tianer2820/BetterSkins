@@ -16,7 +16,7 @@ void Color::setAlpha(u_char alpha)
 {
     this->a = alpha;
 }
-u_char Color::getAlpha()
+u_char Color::getAlpha() const
 {
     return this->a;
 }
@@ -165,7 +165,7 @@ void Color::alphaOver(int *rgba0, int *rgba1, int *out)
     out[2] = bp;
     out[3] = ap;
 }
-wxColor Color::toWxColor()
+wxColor Color::toWxColor() const
 {
     int rgb[3];
     getRGB(rgb);
@@ -215,39 +215,39 @@ void RGBColor::setGray(int gray)
         this->rgb[i] = gray;
     }
 }
-void RGBColor::getRGB(int *out)
+void RGBColor::getRGB(int *out) const
 {
     for (int i = 0; i < 3; i += 1)
     {
         out[i] = this->rgb[i];
     }
 }
-void RGBColor::getHSV(int *out)
+void RGBColor::getHSV(int *out) const
 {
     int rgbi[3];
     getRGB(rgbi);
     Color::RGB2HSV(rgbi, out);
 }
-string RGBColor::getHEX()
+string RGBColor::getHEX() const
 {
     int rgbi[3];
     getRGB(rgbi);
     return Color::RGB2HEX(rgbi);
 }
-int RGBColor::getGray()
+int RGBColor::getGray() const
 {
     int irgb[3];
     getRGB(irgb);
     return Color::RGB2GRAY(irgb);
 }
-string RGBColor::toString()
+string RGBColor::toString() const
 {
     stringstream out;
     out.clear();
     out << "<RGBColorObject: R=" << (int)rgb[0] << " G=" << (int)rgb[1] << " B=" << (int)rgb[2] << ">";
     return out.str();
 }
-Color *RGBColor::copy()
+Color *RGBColor::copy() const
 {
     return new RGBColor(*this);
 }
@@ -295,37 +295,37 @@ void HSVColor::setGray(int gray)
     hsv[1] = 0;
     hsv[2] = gray;
 }
-void HSVColor::getRGB(int *out)
+void HSVColor::getRGB(int *out) const
 {
     int in[3];
     this->getHSV(in);
     Color::HSV2RGB(in, out);
 }
-void HSVColor::getHSV(int *out)
+void HSVColor::getHSV(int *out) const
 {
     for (int i = 0; i < 3; i += 1)
     {
         out[i] = this->hsv[i];
     }
 }
-string HSVColor::getHEX()
+string HSVColor::getHEX() const
 {
     int rgb[3];
     this->getRGB(rgb);
     return Color::RGB2HEX(rgb);
 }
-int HSVColor::getGray()
+int HSVColor::getGray() const
 {
     return hsv[2];
 }
-string HSVColor::toString()
+string HSVColor::toString() const
 {
     stringstream out;
     out.clear();
     out << "<HSVColorObject: H=" << (int)hsv[0] << " S=" << (int)hsv[1] << " V=" << (int)hsv[2] << ">";
     return out.str();
 }
-Color *HSVColor::copy()
+Color *HSVColor::copy() const
 {
     return new HSVColor(*this);
 }

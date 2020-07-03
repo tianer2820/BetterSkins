@@ -106,7 +106,7 @@ wxImage *Layer::getImage()
 {
     return &paint_img;
 }
-void Layer::paint(int x, int y, Color &color)
+void Layer::paint(int x, int y, const Color &color)
 {
     // set pixels and dirty pixels here.
     // here the new paint is not really paint onto the image, but to a buffer layer.

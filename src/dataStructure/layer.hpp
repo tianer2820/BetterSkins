@@ -36,7 +36,7 @@ public:
      * Don't delete the returned object!
      */
     wxImage *getImage();
-    void paint(int x, int y, Color &color);
+    void paint(int x, int y, const Color &color);
     /**
      * clear the current stroke and dont apply to the layer
      */

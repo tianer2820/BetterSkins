@@ -19,17 +19,17 @@ public:
     virtual void setHEX(string s) = 0;
     virtual void setGray(int gray) = 0;
 
-    virtual void getRGB(int *out) = 0;
-    virtual void getHSV(int *out) = 0;
-    virtual string getHEX() = 0;
-    virtual int getGray() = 0;
+    virtual void getRGB(int *out) const = 0;
+    virtual void getHSV(int *out) const = 0;
+    virtual string getHEX() const = 0;
+    virtual int getGray() const = 0;
 
     void setAlpha(u_char alpha);
-    u_char getAlpha();
+    u_char getAlpha() const;
 
-    virtual string toString() = 0;
-    virtual wxColor toWxColor();
-    virtual Color* copy() = 0;
+    virtual string toString() const = 0;
+    virtual wxColor toWxColor() const;
+    virtual Color* copy() const = 0;
 
     static void RGB2HSV(int *rgb, int *out);
     static void HSV2RGB(int *hsv, int *out);
@@ -53,13 +53,13 @@ public:
     virtual void setHEX(string s);
     virtual void setGray(int gray);
 
-    virtual void getRGB(int *out);
-    virtual void getHSV(int *out);
-    virtual string getHEX();
-    virtual int getGray();
+    virtual void getRGB(int *out) const;
+    virtual void getHSV(int *out) const;
+    virtual string getHEX() const;
+    virtual int getGray() const;
 
-    virtual string toString();
-    virtual Color* copy();
+    virtual string toString() const;
+    virtual Color* copy() const;
 
 protected:
     u_char rgb[3];
@@ -75,13 +75,13 @@ public:
     virtual void setHEX(string s);
     virtual void setGray(int gray);
 
-    virtual void getRGB(int *out);
-    virtual void getHSV(int *out);
-    virtual string getHEX();
-    virtual int getGray();
+    virtual void getRGB(int *out) const;
+    virtual void getHSV(int *out) const;
+    virtual string getHEX() const;
+    virtual int getGray() const;
 
-    virtual string toString();
-    virtual Color* copy();
+    virtual string toString() const;
+    virtual Color* copy() const;
 
 protected:
     u_short hsv[3];

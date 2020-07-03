@@ -21,8 +21,7 @@ RGBBarPanel::RGBBarPanel(wxWindow *parent, wxWindowID id) : wxWindow(parent, id)
     {
         bar_list[i] = new RGBBar(this, wxID_ANY, i);
         spin_list[i] = new wxSpinCtrl(this, wxID_ANY);
-        spin_list[i]->SetMin(0);
-        spin_list[i]->SetMax(255);
+        spin_list[i]->SetRange(0, 255);
 
         grid->Add(bar_list[i], 1, wxEXPAND | wxALL, 2);
         grid->Add(spin_list[i], 0, wxEXPAND | wxALL, 2);

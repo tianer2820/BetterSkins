@@ -173,8 +173,7 @@ public:
         wxGridSizer *grid = new wxGridSizer(2);
         wxStaticText *label = new wxStaticText(common_options, wxID_ANY, _T("Size:"));
         size_ctrl = new wxSpinCtrl(common_options);
-        size_ctrl->SetMin(1);
-        size_ctrl->SetMax(16);
+        size_ctrl->SetRange(1, 16);
         Bind(wxEVT_SPINCTRL, &ToolBox::onSizeChange, this, size_ctrl->GetId());
         grid->Add(label, 1, wxALL, 2);
         grid->Add(size_ctrl, 0, wxALL, 2);
@@ -235,8 +234,7 @@ public:
         grid = new wxGridSizer(2);
 
         wxSpinCtrl *lightness_spin = new wxSpinCtrl(panel);
-        lightness_spin->SetMin(-255);
-        lightness_spin->SetMax(255);
+        lightness_spin->SetRange(-255, 255);
         lightness_spin->SetValue(10);
         label = new wxStaticText(panel, wxID_ANY, _T("Lightness:"));
         grid->Add(label, 0, 0, 2);

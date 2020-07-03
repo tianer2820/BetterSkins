@@ -20,16 +20,15 @@ HSVBarPanel::HSVBarPanel(wxWindow *parent, wxWindowID id) : wxWindow(parent, id)
     {
         barList[i] = new HSVBar(this, wxID_ANY, i);
         spinList[i] = new wxSpinCtrl(this, wxID_ANY);
-        spinList[i]->SetMin(0);
         if (i == 0)
         {
-            spinList[i]->SetMax(359);
+            spinList[i]->SetRange(0, 359);
             int c[3] = {0, 255, 255};
             barList[i]->setColor(c);
         }
         else
         {
-            spinList[i]->SetMax(255);
+            spinList[i]->SetRange(0, 255);
         }
 
         grid->Add(barList[i], 1, wxEXPAND | wxALL, 2);

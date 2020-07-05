@@ -1,5 +1,6 @@
 # exclude the library, vscode config file, and build dir.
 .vscode/
+.VSCodeCounter/
 build/
 wxWidgets/
 

@@ -1,5 +1,6 @@
 ## Tools:
-
+- use space bar to move the canvas as well
+- undo/redo for layer and modifier operations!
 
 ## canvas:
 - use color inverse for brush square
